@@ -56,11 +56,13 @@ void loding_wd::initUI()
     
     m_usernameEdit = new QLineEdit();
     m_usernameEdit->setPlaceholderText("请输入用户名");
+    m_usernameEdit->setText("2021001"); // 设置默认用户名
     m_usernameEdit->setStyleSheet("padding: 10px; font-size: 14px; border: 1px solid #bdc3c7; border-radius: 5px;");
     formLayout->addRow("用户名:", m_usernameEdit);
     
     m_passwordEdit = new QLineEdit();
     m_passwordEdit->setPlaceholderText("请输入密码");
+    m_passwordEdit->setText("123456"); // 设置默认密码
     m_passwordEdit->setEchoMode(QLineEdit::Password);
     m_passwordEdit->setStyleSheet("padding: 10px; font-size: 14px; border: 1px solid #bdc3c7; border-radius: 5px;");
     formLayout->addRow("密码:", m_passwordEdit);

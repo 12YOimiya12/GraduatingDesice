@@ -1,4 +1,5 @@
 #include "studentpanel.h"
+#include "databasemanager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
