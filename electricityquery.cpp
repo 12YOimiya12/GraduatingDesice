@@ -185,6 +185,13 @@ void ElectricityQuery::onFetchDataClicked()
         url = "https://ykt.jcu.edu.cn/epay/electric/load4electricbill?elcsysid=1";
     }
     
+    // 获取当前登录用户信息
+    QString dormitory = "";
+    QString operatorName = "匿名用户";
+    
+    // 这里需要根据实际应用获取当前用户信息
+    // 暂时使用默认值，实际应用中应该从登录信息获取
+    
     m_statusLabel->setText("正在获取数据，请稍候...");
     m_statusLabel->setStyleSheet("padding: 10px; background-color: #fff3cd; color: #856404; border-radius: 5px; text-align: center;");
     m_progressBar->setVisible(true);
@@ -195,7 +202,7 @@ void ElectricityQuery::onFetchDataClicked()
     m_resultDormLabel->setText("宿舍信息: --");
     m_rawHtmlText->clear();
     
-    m_parser->fetchElectricityData(url);
+    m_parser->fetchElectricityData(url, dormitory, operatorName);
 }
 
 void ElectricityQuery::onDataReady()

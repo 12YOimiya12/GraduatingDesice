@@ -1,4 +1,5 @@
 #include "electricityparser.h"
+#include "databasemanager.h"
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QSslConfiguration>
@@ -15,6 +16,8 @@ ElectricityParser::ElectricityParser(QObject *parent)
     , m_remainingAmount("")
     , m_dormitory("")
     , m_rawHtml("")
+    , m_currentOperatorName("系统")
+    , m_currentUrl("")
     , m_isFinished(false)
     , m_hasError(false)
     , m_errorString("")
@@ -33,13 +36,20 @@ void ElectricityParser::fetchElectricityData()
 
 void ElectricityParser::fetchElectricityData(const QString &url)
 {
+    fetchElectricityData(url, "", "系统");
+}
+
+void ElectricityParser::fetchElectricityData(const QString &url, const QString &dormitory, const QString &operatorName)
+{
     m_isFinished = false;
     m_hasError = false;
     m_errorString = "";
     m_remainingKwh = "";
     m_remainingAmount = "";
-    m_dormitory = "";
+    m_dormitory = dormitory;
     m_rawHtml = "";
+    m_currentOperatorName = operatorName;
+    m_currentUrl = url;
     
     QUrl qurl(url);
     QNetworkRequest request(qurl);
@@ -70,6 +80,15 @@ void ElectricityParser::onReplyFinished(QNetworkReply *reply)
     qDebug() << "HTML received, length:" << m_rawHtml.length();
     
     parseHtml(m_rawHtml);
+    
+    // 如果解析到剩余度数并且有宿舍信息，记录度数变动
+    if (!m_remainingKwh.isEmpty() && !m_dormitory.isEmpty()) {
+        bool ok;
+        double kwh = m_remainingKwh.toDouble(&ok);
+        if (ok) {
+            DatabaseManager::instance().updateDormitoryKwh(m_dormitory, kwh, m_currentOperatorName, m_currentUrl);
+        }
+    }
     
     m_isFinished = true;
     reply->deleteLater();

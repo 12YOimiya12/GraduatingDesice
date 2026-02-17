@@ -92,7 +92,9 @@ bool DatabaseManager::createTables()
             floor INTEGER NOT NULL,
             current_balance REAL NOT NULL DEFAULT 0.0,
             last_reading REAL NOT NULL DEFAULT 0.0,
-            last_update DATETIME DEFAULT CURRENT_TIMESTAMP
+            remaining_kwh REAL NOT NULL DEFAULT 0.0,
+            last_update DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_kwh_update DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     )";
     
@@ -161,6 +163,27 @@ bool DatabaseManager::createTables()
         return false;
     }
     
+    // 创建电费度数变动记录表
+    QString createElectricityKwhChangeRecordsTable = R"(
+        CREATE TABLE IF NOT EXISTS electricity_kwh_change_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dormitory TEXT NOT NULL,
+            kwh_before REAL NOT NULL,
+            kwh_after REAL NOT NULL,
+            kwh_change REAL NOT NULL,
+            change_type TEXT NOT NULL,
+            operator_name TEXT,
+            remark TEXT,
+            change_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            query_url TEXT
+        )
+    )";
+    
+    if (!query.exec(createElectricityKwhChangeRecordsTable)) {
+        qDebug() << "Create electricity_kwh_change_records table error:" << query.lastError().text();
+        return false;
+    }
+    
     return true;
 }
 
@@ -178,7 +201,9 @@ bool DatabaseManager::createIndexes()
         "CREATE INDEX IF NOT EXISTS idx_recharge_dorm ON recharge_records(dormitory)",
         "CREATE INDEX IF NOT EXISTS idx_electricity_change_user ON electricity_change_records(user_id)",
         "CREATE INDEX IF NOT EXISTS idx_electricity_change_dorm ON electricity_change_records(dormitory)",
-        "CREATE INDEX IF NOT EXISTS idx_electricity_change_time ON electricity_change_records(change_time)"
+        "CREATE INDEX IF NOT EXISTS idx_electricity_change_time ON electricity_change_records(change_time)",
+        "CREATE INDEX IF NOT EXISTS idx_electricity_kwh_change_dorm ON electricity_kwh_change_records(dormitory)",
+        "CREATE INDEX IF NOT EXISTS idx_electricity_kwh_change_time ON electricity_kwh_change_records(change_time)"
     };
     
     for (const QString& sql : indexQueries) {
@@ -517,6 +542,138 @@ QList<ElectricityRecord> DatabaseManager::getElectricityRecordsByUser(int userId
     }
     
     return records;
+}
+
+bool DatabaseManager::addElectricityKwhChangeRecord(const ElectricityKwhChangeRecord& record)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        INSERT INTO electricity_kwh_change_records 
+        (dormitory, kwh_before, kwh_after, kwh_change, change_type, operator_name, remark, query_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    )");
+    
+    query.addBindValue(record.dormitory);
+    query.addBindValue(record.kwhBefore);
+    query.addBindValue(record.kwhAfter);
+    query.addBindValue(record.kwhChange);
+    query.addBindValue(record.changeType);
+    query.addBindValue(record.operatorName);
+    query.addBindValue(record.remark);
+    query.addBindValue(record.queryUrl);
+    
+    if (!query.exec()) {
+        qDebug() << "Add electricity kwh change record error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+QList<ElectricityKwhChangeRecord> DatabaseManager::getElectricityKwhChangeRecordsByDormitory(const QString& dormitory)
+{
+    QList<ElectricityKwhChangeRecord> records;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM electricity_kwh_change_records WHERE dormitory=? ORDER BY change_time DESC");
+    query.addBindValue(dormitory);
+    
+    if (!query.exec()) {
+        qDebug() << "Get electricity kwh change records error:" << query.lastError().text();
+        return records;
+    }
+    
+    while (query.next()) {
+        ElectricityKwhChangeRecord record;
+        record.id = query.value("id").toInt();
+        record.dormitory = query.value("dormitory").toString();
+        record.kwhBefore = query.value("kwh_before").toDouble();
+        record.kwhAfter = query.value("kwh_after").toDouble();
+        record.kwhChange = query.value("kwh_change").toDouble();
+        record.changeType = query.value("change_type").toString();
+        record.operatorName = query.value("operator_name").toString();
+        record.remark = query.value("remark").toString();
+        record.changeTime = query.value("change_time").toDateTime();
+        record.queryUrl = query.value("query_url").toString();
+        records.append(record);
+    }
+    
+    return records;
+}
+
+QList<ElectricityKwhChangeRecord> DatabaseManager::getAllElectricityKwhChangeRecords()
+{
+    QList<ElectricityKwhChangeRecord> records;
+    
+    QSqlQuery query("SELECT * FROM electricity_kwh_change_records ORDER BY change_time DESC");
+    
+    if (!query.exec()) {
+        qDebug() << "Get all electricity kwh change records error:" << query.lastError().text();
+        return records;
+    }
+    
+    while (query.next()) {
+        ElectricityKwhChangeRecord record;
+        record.id = query.value("id").toInt();
+        record.dormitory = query.value("dormitory").toString();
+        record.kwhBefore = query.value("kwh_before").toDouble();
+        record.kwhAfter = query.value("kwh_after").toDouble();
+        record.kwhChange = query.value("kwh_change").toDouble();
+        record.changeType = query.value("change_type").toString();
+        record.operatorName = query.value("operator_name").toString();
+        record.remark = query.value("remark").toString();
+        record.changeTime = query.value("change_time").toDateTime();
+        record.queryUrl = query.value("query_url").toString();
+        records.append(record);
+    }
+    
+    return records;
+}
+
+bool DatabaseManager::updateDormitoryKwh(const QString& dormNumber, double newKwh, const QString& operatorName, const QString& queryUrl)
+{
+    m_db.transaction();
+    
+    // 获取当前宿舍信息
+    DormitoryInfo dorm = getDormitoryByNumber(dormNumber);
+    if (dorm.id == -1) {
+        m_db.rollback();
+        return false;
+    }
+    
+    double oldKwh = dorm.remainingKwh;
+    double kwhChange = newKwh - oldKwh;
+    
+    // 更新宿舍度数
+    QSqlQuery query;
+    query.prepare("UPDATE dormitories SET remaining_kwh=?, last_kwh_update=CURRENT_TIMESTAMP WHERE dorm_number=?");
+    query.addBindValue(newKwh);
+    query.addBindValue(dormNumber);
+    
+    if (!query.exec()) {
+        m_db.rollback();
+        qDebug() << "Update dormitory kwh error:" << query.lastError().text();
+        return false;
+    }
+    
+    // 记录度数变动
+    ElectricityKwhChangeRecord record;
+    record.dormitory = dormNumber;
+    record.kwhBefore = oldKwh;
+    record.kwhAfter = newKwh;
+    record.kwhChange = kwhChange;
+    record.changeType = "查询";
+    record.operatorName = operatorName;
+    record.remark = QString("网页查询更新度数，变动量: %1 度").arg(kwhChange, 0, 'f', 2);
+    record.queryUrl = queryUrl;
+    
+    if (!addElectricityKwhChangeRecord(record)) {
+        m_db.rollback();
+        return false;
+    }
+    
+    m_db.commit();
+    return true;
 }
 
 QList<ElectricityRecord> DatabaseManager::getElectricityRecordsByDormitory(const QString& dormitory)

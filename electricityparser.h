@@ -47,6 +47,14 @@ public:
      */
     void fetchElectricityData(const QString &url);
     
+    /**
+     * @brief 获取电费数据（指定URL、宿舍和操作员信息）
+     * @param url 电费查询网页URL
+     * @param dormitory 宿舍号
+     * @param operatorName 操作员姓名
+     */
+    void fetchElectricityData(const QString &url, const QString &dormitory, const QString &operatorName);
+    
     // 获取解析结果的方法
     QString getRemainingKwh() const { return m_remainingKwh; }      // 剩余电费度数
     QString getRemainingAmount() const { return m_remainingAmount; } // 剩余金额
@@ -108,6 +116,8 @@ private:
     QString m_remainingAmount;           // 剩余金额
     QString m_dormitory;                 // 宿舍信息
     QString m_rawHtml;                   // 原始HTML内容
+    QString m_currentOperatorName;       // 当前操作员姓名
+    QString m_currentUrl;                // 当前查询URL
     bool m_isFinished;                   // 是否完成标志
     bool m_hasError;                     // 错误标志
     QString m_errorString;               // 错误信息

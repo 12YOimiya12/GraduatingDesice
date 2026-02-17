@@ -28,7 +28,9 @@ struct DormitoryInfo {
     int floor;                  // 楼层
     double currentBalance;      // 当前电费余额
     double lastReading;         // 上次读数
+    double remainingKwh;        // 剩余电费度数
     QDateTime lastUpdate;       // 最后更新时间
+    QDateTime lastKwhUpdate;    // 最后度数更新时间
 };
 
 // 用电记录结构体
@@ -67,6 +69,20 @@ struct ElectricityChangeRecord {
     QString operatorName;       // 操作员姓名
     QString remark;             // 备注
     QDateTime changeTime;       // 变动时间
+};
+
+// 电费度数变动记录结构体
+struct ElectricityKwhChangeRecord {
+    int id;                     // 记录ID
+    QString dormitory;          // 宿舍号
+    double kwhBefore;           // 变动前度数
+    double kwhAfter;            // 变动后度数
+    double kwhChange;           // 度数变动量
+    QString changeType;         // 变动类型（"查询"、"调整"）
+    QString operatorName;       // 操作员姓名
+    QString remark;             // 备注
+    QDateTime changeTime;       // 变动时间
+    QString queryUrl;           // 查询网址
 };
 
 /**
@@ -135,6 +151,14 @@ public:
     QList<ElectricityChangeRecord> getElectricityChangeRecordsByUser(int userId);
     QList<ElectricityChangeRecord> getElectricityChangeRecordsByDormitory(const QString& dormitory);
     QList<ElectricityChangeRecord> getAllElectricityChangeRecords();
+    
+    // 电费度数变动记录相关方法
+    bool addElectricityKwhChangeRecord(const ElectricityKwhChangeRecord& record);
+    QList<ElectricityKwhChangeRecord> getElectricityKwhChangeRecordsByDormitory(const QString& dormitory);
+    QList<ElectricityKwhChangeRecord> getAllElectricityKwhChangeRecords();
+    
+    // 宿舍度数管理方法
+    bool updateDormitoryKwh(const QString& dormNumber, double newKwh, const QString& operatorName = "系统", const QString& queryUrl = "");
     
     /**
      * @brief 用户充值操作

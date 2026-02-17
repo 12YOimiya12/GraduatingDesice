@@ -14,9 +14,11 @@ StudentPanel::StudentPanel(QWidget *parent)
     : QMainWindow(parent)
     , m_userInfoLabel(nullptr)
     , m_balanceLabel(nullptr)
+    , m_remainingKwhLabel(nullptr)
     , m_electricityTable(nullptr)
     , m_rechargeTable(nullptr)
     , m_changeRecordsTable(nullptr)
+    , m_kwhChangeRecordsTable(nullptr)
     , m_webQueryBtn(nullptr)
     , m_electricityQuery(nullptr)
 {
@@ -47,6 +49,14 @@ void StudentPanel::initUI()
     m_userInfoLabel = new QLabel();
     m_userInfoLabel->setStyleSheet("font-size: 14px; padding: 5px;");
     userInfoLayout->addWidget(m_userInfoLabel);
+    
+    m_balanceLabel = new QLabel("当前余额: 加载中...");
+    m_balanceLabel->setStyleSheet("font-size: 14px; padding: 10px; color: #e74c3c;");
+    userInfoLayout->addWidget(m_balanceLabel);
+    
+    m_remainingKwhLabel = new QLabel("剩余度数: 加载中...");
+    m_remainingKwhLabel->setStyleSheet("font-size: 14px; padding: 10px; color: #27ae60;");
+    userInfoLayout->addWidget(m_remainingKwhLabel);
     
     userInfoLayout->addStretch();
     
@@ -142,7 +152,25 @@ void StudentPanel::initUI()
     m_changeRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     changeRecordsLayout->addWidget(m_changeRecordsTable);
     
-    tabWidget->addTab(changeRecordsTab, "变动记录");
+    tabWidget->addTab(changeRecordsTab, "金额变动记录");
+    
+    // 电费度数变动记录标签页
+    QWidget *kwhChangeRecordsTab = new QWidget();
+    QVBoxLayout *kwhChangeRecordsLayout = new QVBoxLayout(kwhChangeRecordsTab);
+    
+    QLabel *kwhChangeRecordsTitle = new QLabel("电费度数变动记录");
+    kwhChangeRecordsTitle->setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;");
+    kwhChangeRecordsLayout->addWidget(kwhChangeRecordsTitle);
+    
+    m_kwhChangeRecordsTable = new QTableWidget();
+    m_kwhChangeRecordsTable->setColumnCount(8);
+    m_kwhChangeRecordsTable->setHorizontalHeaderLabels({"时间", "变动类型", "变动度数(度)", "变动前度数(度)", "变动后度数(度)", "宿舍", "操作人", "查询网址"});
+    m_kwhChangeRecordsTable->horizontalHeader()->setStretchLastSection(true);
+    m_kwhChangeRecordsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_kwhChangeRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    kwhChangeRecordsLayout->addWidget(m_kwhChangeRecordsTable);
+    
+    tabWidget->addTab(kwhChangeRecordsTab, "度数变动记录");
     
     connect(tabWidget, &QTabWidget::currentChanged, this, &StudentPanel::onTabChanged);
     
@@ -157,6 +185,7 @@ void StudentPanel::setCurrentUser(const UserInfo& user)
     loadElectricityRecords();
     loadRechargeRecords();
     loadElectricityChangeRecords();
+    loadElectricityKwhChangeRecords();
 }
 
 void StudentPanel::loadUserInfo()
@@ -180,6 +209,13 @@ void StudentPanel::loadBalanceInfo()
         m_balanceLabel->setStyleSheet("font-size: 24px; font-weight: bold; color: #e74c3c; padding: 20px; background-color: #ecf0f1; border-radius: 8px;");
     } else {
         m_balanceLabel->setStyleSheet("font-size: 24px; font-weight: bold; color: #27ae60; padding: 20px; background-color: #ecf0f1; border-radius: 8px;");
+    }
+    
+    DormitoryInfo dorm = DatabaseManager::instance().getDormitoryByNumber(m_currentUser.dormitory);
+    if (dorm.id != -1) {
+        m_remainingKwhLabel->setText(QString("剩余度数: %1 度").arg(dorm.remainingKwh, 0, 'f', 2));
+    } else {
+        m_remainingKwhLabel->setText("剩余度数: 获取失败");
     }
 }
 
@@ -252,6 +288,10 @@ void StudentPanel::onTabChanged(int index)
         loadElectricityRecords();
     } else if (index == 2) {
         loadRechargeRecords();
+    } else if (index == 3) {
+        loadElectricityChangeRecords();
+    } else if (index == 4) {
+        loadElectricityKwhChangeRecords();
     }
 }
 
@@ -295,5 +335,46 @@ void StudentPanel::loadElectricityChangeRecords()
         m_changeRecordsTable->setItem(i, 5, new QTableWidgetItem(record.dormitory));
         m_changeRecordsTable->setItem(i, 6, new QTableWidgetItem(record.operatorName));
         m_changeRecordsTable->setItem(i, 7, new QTableWidgetItem(record.remark));
+    }
+}
+
+void StudentPanel::loadElectricityKwhChangeRecords()
+{
+    QList<ElectricityKwhChangeRecord> records = DatabaseManager::instance().getElectricityKwhChangeRecordsByDormitory(m_currentUser.dormitory);
+    
+    m_kwhChangeRecordsTable->setRowCount(records.size());
+    
+    for (int i = 0; i < records.size(); ++i) {
+        const ElectricityKwhChangeRecord& record = records[i];
+        
+        // 设置颜色样式
+        QString kwhStyle;
+        if (record.kwhChange > 0) {
+            kwhStyle = "color: #27ae60;"; // 绿色表示度数增加
+        } else if (record.kwhChange < 0) {
+            kwhStyle = "color: #e74c3c;"; // 红色表示度数减少
+        }
+        
+        m_kwhChangeRecordsTable->setItem(i, 0, new QTableWidgetItem(record.changeTime.toString("yyyy-MM-dd hh:mm:ss")));
+        m_kwhChangeRecordsTable->setItem(i, 1, new QTableWidgetItem(record.changeType));
+        
+        QTableWidgetItem *kwhChangeItem = new QTableWidgetItem(QString::number(record.kwhChange, 'f', 2));
+        kwhChangeItem->setData(Qt::TextAlignmentRole, Qt::AlignRight);
+        if (!kwhStyle.isEmpty()) {
+            kwhChangeItem->setData(Qt::UserRole, kwhStyle);
+        }
+        m_kwhChangeRecordsTable->setItem(i, 2, kwhChangeItem);
+        
+        m_kwhChangeRecordsTable->setItem(i, 3, new QTableWidgetItem(QString::number(record.kwhBefore, 'f', 2)));
+        m_kwhChangeRecordsTable->setItem(i, 4, new QTableWidgetItem(QString::number(record.kwhAfter, 'f', 2)));
+        m_kwhChangeRecordsTable->setItem(i, 5, new QTableWidgetItem(record.dormitory));
+        m_kwhChangeRecordsTable->setItem(i, 6, new QTableWidgetItem(record.operatorName));
+        
+        // 显示查询网址，如果过长则截断显示
+        QString queryUrl = record.queryUrl;
+        if (queryUrl.length() > 50) {
+            queryUrl = queryUrl.left(50) + "...";
+        }
+        m_kwhChangeRecordsTable->setItem(i, 7, new QTableWidgetItem(queryUrl));
     }
 }
