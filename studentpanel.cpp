@@ -16,6 +16,7 @@ StudentPanel::StudentPanel(QWidget *parent)
     , m_balanceLabel(nullptr)
     , m_electricityTable(nullptr)
     , m_rechargeTable(nullptr)
+    , m_changeRecordsTable(nullptr)
     , m_webQueryBtn(nullptr)
     , m_electricityQuery(nullptr)
 {
@@ -125,6 +126,24 @@ void StudentPanel::initUI()
     
     tabWidget->addTab(rechargeTab, "充值记录");
     
+    // 电费变动记录标签页
+    QWidget *changeRecordsTab = new QWidget();
+    QVBoxLayout *changeRecordsLayout = new QVBoxLayout(changeRecordsTab);
+    
+    QLabel *changeRecordsTitle = new QLabel("电费变动记录");
+    changeRecordsTitle->setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;");
+    changeRecordsLayout->addWidget(changeRecordsTitle);
+    
+    m_changeRecordsTable = new QTableWidget();
+    m_changeRecordsTable->setColumnCount(8);
+    m_changeRecordsTable->setHorizontalHeaderLabels({"时间", "变动类型", "变动金额(元)", "变动前余额(元)", "变动后余额(元)", "宿舍", "操作人", "备注"});
+    m_changeRecordsTable->horizontalHeader()->setStretchLastSection(true);
+    m_changeRecordsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_changeRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    changeRecordsLayout->addWidget(m_changeRecordsTable);
+    
+    tabWidget->addTab(changeRecordsTab, "变动记录");
+    
     connect(tabWidget, &QTabWidget::currentChanged, this, &StudentPanel::onTabChanged);
     
     mainLayout->addWidget(tabWidget);
@@ -137,6 +156,7 @@ void StudentPanel::setCurrentUser(const UserInfo& user)
     loadBalanceInfo();
     loadElectricityRecords();
     loadRechargeRecords();
+    loadElectricityChangeRecords();
 }
 
 void StudentPanel::loadUserInfo()
@@ -241,4 +261,39 @@ void StudentPanel::onWebQueryClicked()
         m_electricityQuery = new ElectricityQuery();
     }
     m_electricityQuery->show();
+}
+
+void StudentPanel::loadElectricityChangeRecords()
+{
+    QList<ElectricityChangeRecord> records = DatabaseManager::instance().getElectricityChangeRecordsByUser(m_currentUser.id);
+    
+    m_changeRecordsTable->setRowCount(records.size());
+    
+    for (int i = 0; i < records.size(); ++i) {
+        const ElectricityChangeRecord& record = records[i];
+        
+        // 设置颜色样式
+        QString amountStyle;
+        if (record.changeAmount > 0) {
+            amountStyle = "color: #27ae60;"; // 绿色表示充值
+        } else {
+            amountStyle = "color: #e74c3c;"; // 红色表示扣费
+        }
+        
+        m_changeRecordsTable->setItem(i, 0, new QTableWidgetItem(record.changeTime.toString("yyyy-MM-dd hh:mm:ss")));
+        m_changeRecordsTable->setItem(i, 1, new QTableWidgetItem(record.changeType));
+        
+        QTableWidgetItem *amountItem = new QTableWidgetItem(QString::number(record.changeAmount, 'f', 2));
+        amountItem->setData(Qt::TextAlignmentRole, Qt::AlignRight);
+        if (!amountStyle.isEmpty()) {
+            amountItem->setData(Qt::UserRole, amountStyle);
+        }
+        m_changeRecordsTable->setItem(i, 2, amountItem);
+        
+        m_changeRecordsTable->setItem(i, 3, new QTableWidgetItem(QString::number(record.balanceBefore, 'f', 2)));
+        m_changeRecordsTable->setItem(i, 4, new QTableWidgetItem(QString::number(record.balanceAfter, 'f', 2)));
+        m_changeRecordsTable->setItem(i, 5, new QTableWidgetItem(record.dormitory));
+        m_changeRecordsTable->setItem(i, 6, new QTableWidgetItem(record.operatorName));
+        m_changeRecordsTable->setItem(i, 7, new QTableWidgetItem(record.remark));
+    }
 }
