@@ -24,21 +24,13 @@ class AdminPanel : public QMainWindow
     Q_OBJECT
 
 public:
-    /**
-     * @brief 构造函数
-     * @param parent 父窗口指针
-     */
+    
     explicit AdminPanel(QWidget *parent = nullptr);
     
-    /**
-     * @brief 析构函数
-     */
+   
     ~AdminPanel();
     
-    /**
-     * @brief 设置当前登录用户
-     * @param user 用户信息
-     */
+    
     void setCurrentUser(const UserInfo& user);
     
 signals:
