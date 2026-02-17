@@ -1,0 +1,15 @@
+debug/databasemanager.o
+debug/electricityparser.o
+debug/loding_wd.o
+debug/main.o
+debug/mainwindow.o
+debug/studentinfo.o
+debug/studentpanel.o
+debug/adminpanel.o
+debug/electricityquery.o
+debug/moc_electricityparser.o
+debug/moc_loding_wd.o
+debug/moc_mainwindow.o
+debug/moc_studentpanel.o
+debug/moc_adminpanel.o
+debug/moc_electricityquery.o
