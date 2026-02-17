@@ -178,7 +178,7 @@ void AdminPanel::initUI()
     
     m_dormitoriesTable = new QTableWidget();
     m_dormitoriesTable->setColumnCount(7);
-    m_dormitoriesTable->setHorizontalHeaderLabels({"ID", "宿舍号", "楼栋", "楼层", "当前余额(元)", "上次读数", "更新时间"});
+    m_dormitoriesTable->setHorizontalHeaderLabels({"ID", "宿舍号", "楼栋", "楼层", "剩余度数(度)", "最后度数更新时间", "最后度数"});
     m_dormitoriesTable->horizontalHeader()->setStretchLastSection(true);
     m_dormitoriesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_dormitoriesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -291,9 +291,9 @@ void AdminPanel::loadDormitories()
         m_dormitoriesTable->setItem(i, 1, new QTableWidgetItem(dorm.dormNumber));
         m_dormitoriesTable->setItem(i, 2, new QTableWidgetItem(dorm.building));
         m_dormitoriesTable->setItem(i, 3, new QTableWidgetItem(QString::number(dorm.floor)));
-        m_dormitoriesTable->setItem(i, 4, new QTableWidgetItem(QString::number(dorm.currentBalance, 'f', 2)));
-        m_dormitoriesTable->setItem(i, 5, new QTableWidgetItem(QString::number(dorm.lastReading, 'f', 2)));
-        m_dormitoriesTable->setItem(i, 6, new QTableWidgetItem(dorm.lastUpdate.toString("yyyy-MM-dd hh:mm:ss")));
+        m_dormitoriesTable->setItem(i, 4, new QTableWidgetItem(QString::number(dorm.remainingKwh, 'f', 2)));
+        m_dormitoriesTable->setItem(i, 5, new QTableWidgetItem(dorm.lastKwhUpdate.toString("yyyy-MM-dd hh:mm:ss")));
+        m_dormitoriesTable->setItem(i, 6, new QTableWidgetItem(QString::number(dorm.lastReading, 'f', 2)));
     }
 }
 
@@ -570,6 +570,7 @@ void AdminPanel::onRechargeForStudentClicked()
         if (DatabaseManager::instance().recharge(userId, amount, m_currentUser.name)) {
             QMessageBox::information(this, "成功", QString("充值成功! 充值金额: ¥%1").arg(amount, 0, 'f', 2));
             loadStudents();
+            loadDormitories();
             loadStatistics();
             loadRechargeRecords();
         } else {
@@ -595,6 +596,7 @@ void AdminPanel::onDeductElectricityClicked()
         if (DatabaseManager::instance().deductElectricityCost(dormNumber, cost)) {
             QMessageBox::information(this, "成功", QString("扣费成功! 扣费金额: ¥%1").arg(cost, 0, 'f', 2));
             loadStudents();
+            loadDormitories();
             loadElectricityRecords();
             loadStatistics();
         } else {

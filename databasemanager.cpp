@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QCryptographicHash>
 #include <QFile>
+#include <random>
 
 DatabaseManager::DatabaseManager()
 {
@@ -492,7 +493,9 @@ QList<DormitoryInfo> DatabaseManager::getAllDormitories()
         dorm.floor = query.value("floor").toInt();
         dorm.currentBalance = query.value("current_balance").toDouble();
         dorm.lastReading = query.value("last_reading").toDouble();
+        dorm.remainingKwh = query.value("remaining_kwh").toDouble();
         dorm.lastUpdate = query.value("last_update").toDateTime();
+        dorm.lastKwhUpdate = query.value("last_kwh_update").toDateTime();
         dorms.append(dorm);
     }
     
@@ -542,6 +545,79 @@ QList<ElectricityRecord> DatabaseManager::getElectricityRecordsByUser(int userId
     }
     
     return records;
+}
+
+bool DatabaseManager::generateSampleKwhChangeRecords()
+{
+    // 获取所有寝室列表
+    QList<DormitoryInfo> dorms = getAllDormitories();
+    if (dorms.isEmpty()) {
+        qDebug() << "No dormitories found for generating sample records";
+        return false;
+    }
+    
+    // 设置随机数生成器
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(-100, 100);
+    
+    // 为每个寝室生成10次度数变化记录
+    for (const DormitoryInfo& dorm : dorms) {
+        double currentKwh = 0.0; // 起始度数为0
+        QDateTime currentTime = QDateTime::currentDateTime().addDays(-10); // 从10天前开始
+        
+        for (int i = 0; i < 10; ++i) {
+            // 生成随机变化值（-100到100之间）
+            double changeKwh = dis(gen); // -100到100
+            
+            // 确保度数不会变为负数
+            double newKwh = currentKwh + changeKwh;
+            if (newKwh < 0) {
+                newKwh = 0;
+                changeKwh = newKwh - currentKwh;
+            }
+            
+            // 创建度数变化记录
+            ElectricityKwhChangeRecord record;
+            record.dormitory = dorm.dormNumber;
+            record.kwhBefore = currentKwh;
+            record.kwhAfter = newKwh;
+            record.kwhChange = changeKwh;
+            
+            // 根据变化值设置变动类型
+            if (changeKwh > 0) {
+                record.changeType = "度数增加";
+            } else if (changeKwh < 0) {
+                record.changeType = "度数减少";
+            } else {
+                record.changeType = "度数不变";
+            }
+            
+            record.operatorName = "系统生成";
+            record.remark = "示例数据";
+            record.queryUrl = "https://example.com/electricity/query";
+            record.changeTime = currentTime;
+            
+            // 添加记录到数据库
+            if (!addElectricityKwhChangeRecord(record)) {
+                qDebug() << "Failed to add kwh change record for dormitory" << dorm.dormNumber;
+                return false;
+            }
+            
+            // 更新当前度数和时间
+            currentKwh = newKwh;
+            currentTime = currentTime.addDays(1); // 时间间隔为一天
+        }
+        
+        // 更新寝室的剩余度数
+        if (!updateDormitoryKwh(dorm.dormNumber, currentKwh, "系统生成", "示例数据初始化")) {
+            qDebug() << "Failed to update dormitory kwh for" << dorm.dormNumber;
+            return false;
+        }
+    }
+    
+    qDebug() << "Generated sample kwh change records for" << dorms.size() << "dormitories";
+    return true;
 }
 
 bool DatabaseManager::addElectricityKwhChangeRecord(const ElectricityKwhChangeRecord& record)

@@ -195,10 +195,16 @@ public:
     bool authenticateUser(const QString& username, const QString& password, UserInfo& user);
     
     /**
-     * @brief 初始化示例数据（用于测试）
+     * @brief 初始化示例数据
      * @return bool 初始化成功返回true，失败返回false
      */
     bool initSampleData();
+    
+    /**
+     * @brief 生成示例度数变化记录
+     * @return bool 生成成功返回true，失败返回false
+     */
+    bool generateSampleKwhChangeRecords();
     
 private:
     DatabaseManager();

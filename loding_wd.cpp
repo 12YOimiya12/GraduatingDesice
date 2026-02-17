@@ -21,6 +21,7 @@ loding_wd::loding_wd(QWidget *parent)
     }
     
     DatabaseManager::instance().initSampleData();
+    DatabaseManager::instance().generateSampleKwhChangeRecords();
 }
 
 loding_wd::~loding_wd()
