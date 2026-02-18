@@ -14,6 +14,11 @@
 #include <QFormLayout>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QLineSeries>
+#include <QChart>
+#include <QDateTimeAxis>
+#include <QValueAxis>
+#include <QDateTime>
 
 AdminPanel::AdminPanel(QWidget *parent)
     : QMainWindow(parent)
@@ -22,6 +27,8 @@ AdminPanel::AdminPanel(QWidget *parent)
     , m_dormitoriesTable(nullptr)
     , m_rechargeRecordsTable(nullptr)
     , m_electricityRecordsTable(nullptr)
+    , m_rechargeChartView(nullptr)
+    , m_electricityChartView(nullptr)
     , m_totalStudentsLabel(nullptr)
     , m_totalBalanceLabel(nullptr)
     , m_totalRechargeLabel(nullptr)
@@ -199,7 +206,17 @@ void AdminPanel::initUI()
     m_rechargeRecordsTable->horizontalHeader()->setStretchLastSection(true);
     m_rechargeRecordsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_rechargeRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_rechargeRecordsTable->setMaximumHeight(250);
     rechargeLayout->addWidget(m_rechargeRecordsTable);
+    
+    QLabel *rechargeChartTitle = new QLabel("充值趋势图");
+    rechargeChartTitle->setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px; margin-top: 10px;");
+    rechargeLayout->addWidget(rechargeChartTitle);
+    
+    m_rechargeChartView = new QChartView();
+    m_rechargeChartView->setRenderHint(QPainter::Antialiasing);
+    m_rechargeChartView->setMinimumHeight(250);
+    rechargeLayout->addWidget(m_rechargeChartView);
     
     tabWidget->addTab(rechargeTab, "充值记录");
     
@@ -216,7 +233,17 @@ void AdminPanel::initUI()
     m_electricityRecordsTable->horizontalHeader()->setStretchLastSection(true);
     m_electricityRecordsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_electricityRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_electricityRecordsTable->setMaximumHeight(250);
     electricityLayout->addWidget(m_electricityRecordsTable);
+    
+    QLabel *electricityChartTitle = new QLabel("用电趋势图");
+    electricityChartTitle->setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px; margin-top: 10px;");
+    electricityLayout->addWidget(electricityChartTitle);
+    
+    m_electricityChartView = new QChartView();
+    m_electricityChartView->setRenderHint(QPainter::Antialiasing);
+    m_electricityChartView->setMinimumHeight(250);
+    electricityLayout->addWidget(m_electricityChartView);
     
     tabWidget->addTab(electricityTab, "用电记录");
     
@@ -234,6 +261,8 @@ void AdminPanel::setCurrentUser(const UserInfo& user)
     loadDormitories();
     loadRechargeRecords();
     loadElectricityRecords();
+    updateRechargeChart();
+    updateElectricityChart();
 }
 
 void AdminPanel::loadUserInfo()
@@ -612,6 +641,8 @@ void AdminPanel::onRefreshClicked()
     loadDormitories();
     loadRechargeRecords();
     loadElectricityRecords();
+    updateRechargeChart();
+    updateElectricityChart();
     QMessageBox::information(this, "刷新", "数据已刷新!");
 }
 
@@ -623,7 +654,93 @@ void AdminPanel::onTabChanged(int index)
         loadDormitories();
     } else if (index == 3) {
         loadRechargeRecords();
+        updateRechargeChart();
     } else if (index == 4) {
         loadElectricityRecords();
+        updateElectricityChart();
     }
+}
+
+void AdminPanel::updateRechargeChart()
+{
+    QList<RechargeRecord> records = DatabaseManager::instance().getAllRechargeRecords();
+    
+    QChart *chart = new QChart();
+    chart->setTitle("充值金额趋势");
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    
+    QLineSeries *series = new QLineSeries();
+    series->setName("充值金额(元)");
+    
+    // 只显示最近20条记录
+    int startIndex = qMax(0, records.size() - 20);
+    double cumulativeAmount = 0;
+    for (int i = startIndex; i < records.size(); ++i) {
+        const RechargeRecord& record = records[i];
+        QDateTime dateTime = record.rechargeTime;
+        qint64 timestamp = dateTime.toMSecsSinceEpoch();
+        cumulativeAmount += record.amount;
+        series->append(timestamp, cumulativeAmount);
+    }
+    
+    chart->addSeries(series);
+    
+    // 设置X轴（时间轴）
+    QDateTimeAxis *axisX = new QDateTimeAxis();
+    axisX->setFormat("MM-dd hh:mm");
+    axisX->setTitleText("时间");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+    
+    // 设置Y轴（金额轴）
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setTitleText("累计充值金额(元)");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+    
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    
+    m_rechargeChartView->setChart(chart);
+}
+
+void AdminPanel::updateElectricityChart()
+{
+    QList<ElectricityRecord> records = DatabaseManager::instance().getAllElectricityRecords();
+    
+    QChart *chart = new QChart();
+    chart->setTitle("用电量趋势");
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    
+    QLineSeries *series = new QLineSeries();
+    series->setName("用电量(kWh)");
+    
+    // 只显示最近20条记录
+    int startIndex = qMax(0, records.size() - 20);
+    for (int i = startIndex; i < records.size(); ++i) {
+        const ElectricityRecord& record = records[i];
+        QDateTime dateTime = record.recordTime;
+        qint64 timestamp = dateTime.toMSecsSinceEpoch();
+        series->append(timestamp, record.usage);
+    }
+    
+    chart->addSeries(series);
+    
+    // 设置X轴（时间轴）
+    QDateTimeAxis *axisX = new QDateTimeAxis();
+    axisX->setFormat("MM-dd hh:mm");
+    axisX->setTitleText("时间");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+    
+    // 设置Y轴（用电量轴）
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setTitleText("用电量(kWh)");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+    
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    
+    m_electricityChartView->setChart(chart);
 }

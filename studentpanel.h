@@ -6,6 +6,9 @@
 #include <QLabel>
 #include <QTabWidget>
 #include <QPushButton>
+#include <QChartView>
+#include <QLineSeries>
+#include <QChart>
 #include "databasemanager.h"
 #include "electricityquery.h"
 
@@ -114,6 +117,16 @@ private:
      */
     void loadElectricityKwhChangeRecords();
     
+    /**
+     * @brief 更新电费变化图表
+     */
+    void updateBalanceChart();
+    
+    /**
+     * @brief 更新度数变化图表
+     */
+    void updateKwhChart();
+    
     QLabel *m_userInfoLabel;            // 用户信息标签
     QLabel *m_balanceLabel;              // 余额标签
     QLabel *m_remainingKwhLabel;         // 剩余度数标签
@@ -121,6 +134,8 @@ private:
     QTableWidget *m_rechargeTable;       // 充值记录表格
     QTableWidget *m_changeRecordsTable;  // 电费变动记录表格
     QTableWidget *m_kwhChangeRecordsTable; // 电费度数变动记录表格
+    QChartView *m_balanceChartView;      // 电费变化图表视图
+    QChartView *m_kwhChartView;          // 度数变化图表视图
     QPushButton *m_webQueryBtn;          // 网页查询按钮
     ElectricityQuery *m_electricityQuery; // 电费查询窗口
     UserInfo m_currentUser;              // 当前用户信息

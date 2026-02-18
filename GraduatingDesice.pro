@@ -1,4 +1,4 @@
-QT       += core gui sql network
+QT       += core gui sql network charts
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17

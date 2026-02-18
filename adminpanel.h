@@ -5,6 +5,9 @@
 #include <QTableWidget>
 #include <QLabel>
 #include <QTabWidget>
+#include <QChartView>
+#include <QLineSeries>
+#include <QChart>
 #include "databasemanager.h"
 
 /**
@@ -132,11 +135,23 @@ private:
      */
     void loadStatistics();
     
+    /**
+     * @brief 更新充值趋势图表
+     */
+    void updateRechargeChart();
+    
+    /**
+     * @brief 更新用电趋势图表
+     */
+    void updateElectricityChart();
+    
     QLabel *m_userInfoLabel;                // 用户信息标签
     QTableWidget *m_studentsTable;          // 学生列表表格
     QTableWidget *m_dormitoriesTable;       // 宿舍列表表格
     QTableWidget *m_rechargeRecordsTable;   // 充值记录表格
     QTableWidget *m_electricityRecordsTable; // 用电记录表格
+    QChartView *m_rechargeChartView;        // 充值趋势图表视图
+    QChartView *m_electricityChartView;     // 用电趋势图表视图
     QLabel *m_totalStudentsLabel;           // 总学生数标签
     QLabel *m_totalBalanceLabel;            // 总余额标签
     QLabel *m_totalRechargeLabel;           // 总充值金额标签

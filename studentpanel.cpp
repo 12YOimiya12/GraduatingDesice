@@ -10,6 +10,10 @@
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QDateTime>
+#include <QLineSeries>
+#include <QChart>
+#include <QDateTimeAxis>
+#include <QValueAxis>
 
 StudentPanel::StudentPanel(QWidget *parent)
     : QMainWindow(parent)
@@ -20,6 +24,8 @@ StudentPanel::StudentPanel(QWidget *parent)
     , m_rechargeTable(nullptr)
     , m_changeRecordsTable(nullptr)
     , m_kwhChangeRecordsTable(nullptr)
+    , m_balanceChartView(nullptr)
+    , m_kwhChartView(nullptr)
     , m_webQueryBtn(nullptr)
     , m_electricityQuery(nullptr)
 {
@@ -151,7 +157,17 @@ void StudentPanel::initUI()
     m_changeRecordsTable->horizontalHeader()->setStretchLastSection(true);
     m_changeRecordsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_changeRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_changeRecordsTable->setMaximumHeight(250);
     changeRecordsLayout->addWidget(m_changeRecordsTable);
+    
+    QLabel *balanceChartTitle = new QLabel("电费变化趋势图");
+    balanceChartTitle->setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px; margin-top: 10px;");
+    changeRecordsLayout->addWidget(balanceChartTitle);
+    
+    m_balanceChartView = new QChartView();
+    m_balanceChartView->setRenderHint(QPainter::Antialiasing);
+    m_balanceChartView->setMinimumHeight(250);
+    changeRecordsLayout->addWidget(m_balanceChartView);
     
     tabWidget->addTab(changeRecordsTab, "金额变动记录");
     
@@ -169,7 +185,17 @@ void StudentPanel::initUI()
     m_kwhChangeRecordsTable->horizontalHeader()->setStretchLastSection(true);
     m_kwhChangeRecordsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_kwhChangeRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_kwhChangeRecordsTable->setMaximumHeight(250);
     kwhChangeRecordsLayout->addWidget(m_kwhChangeRecordsTable);
+    
+    QLabel *kwhChartTitle = new QLabel("度数变化趋势图");
+    kwhChartTitle->setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px; margin-top: 10px;");
+    kwhChangeRecordsLayout->addWidget(kwhChartTitle);
+    
+    m_kwhChartView = new QChartView();
+    m_kwhChartView->setRenderHint(QPainter::Antialiasing);
+    m_kwhChartView->setMinimumHeight(250);
+    kwhChangeRecordsLayout->addWidget(m_kwhChartView);
     
     tabWidget->addTab(kwhChangeRecordsTab, "度数变动记录");
     
@@ -187,6 +213,8 @@ void StudentPanel::setCurrentUser(const UserInfo& user)
     loadRechargeRecords();
     loadElectricityChangeRecords();
     loadElectricityKwhChangeRecords();
+    updateBalanceChart();
+    updateKwhChart();
 }
 
 void StudentPanel::loadUserInfo()
@@ -280,6 +308,10 @@ void StudentPanel::onRefreshClicked()
     loadBalanceInfo();
     loadElectricityRecords();
     loadRechargeRecords();
+    loadElectricityChangeRecords();
+    loadElectricityKwhChangeRecords();
+    updateBalanceChart();
+    updateKwhChart();
     QMessageBox::information(this, "刷新", "数据已刷新!");
 }
 
@@ -291,8 +323,10 @@ void StudentPanel::onTabChanged(int index)
         loadRechargeRecords();
     } else if (index == 3) {
         loadElectricityChangeRecords();
+        updateBalanceChart();
     } else if (index == 4) {
         loadElectricityKwhChangeRecords();
+        updateKwhChart();
     }
 }
 
@@ -378,4 +412,86 @@ void StudentPanel::loadElectricityKwhChangeRecords()
         }
         m_kwhChangeRecordsTable->setItem(i, 7, new QTableWidgetItem(queryUrl));
     }
+}
+
+void StudentPanel::updateBalanceChart()
+{
+    QList<ElectricityChangeRecord> records = DatabaseManager::instance().getElectricityChangeRecordsByDormitory(m_currentUser.dormitory);
+    
+    QChart *chart = new QChart();
+    chart->setTitle("电费余额变化趋势");
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    
+    QLineSeries *series = new QLineSeries();
+    series->setName("余额(元)");
+    
+    // 只显示最近20条记录
+    int startIndex = qMax(0, records.size() - 20);
+    for (int i = startIndex; i < records.size(); ++i) {
+        const ElectricityChangeRecord& record = records[i];
+        QDateTime dateTime = record.changeTime;
+        qint64 timestamp = dateTime.toMSecsSinceEpoch();
+        series->append(timestamp, record.balanceAfter);
+    }
+    
+    chart->addSeries(series);
+    
+    // 设置X轴（时间轴）
+    QDateTimeAxis *axisX = new QDateTimeAxis();
+    axisX->setFormat("MM-dd hh:mm");
+    axisX->setTitleText("时间");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+    
+    // 设置Y轴（金额轴）
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setTitleText("余额(元)");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+    
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    
+    m_balanceChartView->setChart(chart);
+}
+
+void StudentPanel::updateKwhChart()
+{
+    QList<ElectricityKwhChangeRecord> records = DatabaseManager::instance().getElectricityKwhChangeRecordsByDormitory(m_currentUser.dormitory);
+    
+    QChart *chart = new QChart();
+    chart->setTitle("电费度数变化趋势");
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    
+    QLineSeries *series = new QLineSeries();
+    series->setName("度数(度)");
+    
+    // 只显示最近20条记录
+    int startIndex = qMax(0, records.size() - 20);
+    for (int i = startIndex; i < records.size(); ++i) {
+        const ElectricityKwhChangeRecord& record = records[i];
+        QDateTime dateTime = record.changeTime;
+        qint64 timestamp = dateTime.toMSecsSinceEpoch();
+        series->append(timestamp, record.kwhAfter);
+    }
+    
+    chart->addSeries(series);
+    
+    // 设置X轴（时间轴）
+    QDateTimeAxis *axisX = new QDateTimeAxis();
+    axisX->setFormat("MM-dd hh:mm");
+    axisX->setTitleText("时间");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+    
+    // 设置Y轴（度数轴）
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setTitleText("度数(度)");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+    
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    
+    m_kwhChartView->setChart(chart);
 }
