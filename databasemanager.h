@@ -224,6 +224,12 @@ private:
      */
     bool createIndexes();
     
+    /**
+     * @brief 数据库迁移，确保表结构是最新的
+     * @return bool 迁移成功返回true，失败返回false
+     */
+    bool migrateDatabase();
+    
     QSqlDatabase m_db; // 数据库连接对象
 };
 

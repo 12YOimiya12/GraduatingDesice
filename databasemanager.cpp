@@ -35,6 +35,11 @@ bool DatabaseManager::initDatabase()
         return false;
     }
     
+    // 执行数据库迁移，确保表结构是最新的
+    if (!migrateDatabase()) {
+        return false;
+    }
+    
     return true;
 }
 
@@ -213,6 +218,51 @@ bool DatabaseManager::createIndexes()
         }
     }
     
+    return true;
+}
+
+bool DatabaseManager::migrateDatabase()
+{
+    QSqlQuery query;
+    
+    // 检查dormitories表是否包含remaining_kwh字段
+    query.exec("PRAGMA table_info(dormitories)");
+    bool hasRemainingKwh = false;
+    bool hasLastKwhUpdate = false;
+    
+    while (query.next()) {
+        QString columnName = query.value(1).toString();
+        if (columnName == "remaining_kwh") {
+            hasRemainingKwh = true;
+        }
+        if (columnName == "last_kwh_update") {
+            hasLastKwhUpdate = true;
+        }
+    }
+    
+    // 如果缺少字段，则添加
+    if (!hasRemainingKwh) {
+        qDebug() << "Adding remaining_kwh column to dormitories table";
+        if (!query.exec("ALTER TABLE dormitories ADD COLUMN remaining_kwh REAL DEFAULT 0.0")) {
+            qDebug() << "Failed to add remaining_kwh column:" << query.lastError().text();
+            return false;
+        }
+    }
+    
+    if (!hasLastKwhUpdate) {
+        qDebug() << "Adding last_kwh_update column to dormitories table";
+        // SQLite不支持DEFAULT CURRENT_TIMESTAMP，使用NULL作为默认值
+        if (!query.exec("ALTER TABLE dormitories ADD COLUMN last_kwh_update DATETIME")) {
+            qDebug() << "Failed to add last_kwh_update column:" << query.lastError().text();
+            return false;
+        }
+        // 更新现有记录的时间戳
+        if (!query.exec("UPDATE dormitories SET last_kwh_update = datetime('now') WHERE last_kwh_update IS NULL")) {
+            qDebug() << "Failed to update last_kwh_update values:" << query.lastError().text();
+        }
+    }
+    
+    qDebug() << "Database migration completed successfully";
     return true;
 }
 
@@ -451,7 +501,9 @@ DormitoryInfo DatabaseManager::getDormitoryById(int dormId)
         dorm.floor = query.value("floor").toInt();
         dorm.currentBalance = query.value("current_balance").toDouble();
         dorm.lastReading = query.value("last_reading").toDouble();
+        dorm.remainingKwh = query.value("remaining_kwh").toDouble();
         dorm.lastUpdate = query.value("last_update").toDateTime();
+        dorm.lastKwhUpdate = query.value("last_kwh_update").toDateTime();
     }
     
     return dorm;
@@ -473,7 +525,9 @@ DormitoryInfo DatabaseManager::getDormitoryByNumber(const QString& dormNumber)
         dorm.floor = query.value("floor").toInt();
         dorm.currentBalance = query.value("current_balance").toDouble();
         dorm.lastReading = query.value("last_reading").toDouble();
+        dorm.remainingKwh = query.value("remaining_kwh").toDouble();
         dorm.lastUpdate = query.value("last_update").toDateTime();
+        dorm.lastKwhUpdate = query.value("last_kwh_update").toDateTime();
     }
     
     return dorm;
@@ -609,8 +663,13 @@ bool DatabaseManager::generateSampleKwhChangeRecords()
             currentTime = currentTime.addDays(1); // 时间间隔为一天
         }
         
-        // 更新寝室的剩余度数
-        if (!updateDormitoryKwh(dorm.dormNumber, currentKwh, "系统生成", "示例数据初始化")) {
+        // 直接更新寝室的剩余度数，不记录度数变化（避免重复记录）
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE dormitories SET remaining_kwh=?, last_kwh_update=CURRENT_TIMESTAMP WHERE dorm_number=?");
+        updateQuery.addBindValue(currentKwh);
+        updateQuery.addBindValue(dorm.dormNumber);
+        
+        if (!updateQuery.exec()) {
             qDebug() << "Failed to update dormitory kwh for" << dorm.dormNumber;
             return false;
         }
