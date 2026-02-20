@@ -1,5 +1,10 @@
 <RCC>
     <qresource prefix="/new/prefix1">
         <file>icon/folder_icon-icons.com_55318.png</file>
+        <file>icon/app_icon.svg</file>
+        <file>icon/ui_login.svg</file>
+        <file>icon/ui_student.svg</file>
+        <file>icon/ui_admin.svg</file>
+        <file>styles.qss</file>
     </qresource>
 </RCC>

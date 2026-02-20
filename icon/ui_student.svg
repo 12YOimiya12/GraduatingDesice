@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="sidebarGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2c3e50"/>
+      <stop offset="100%" style="stop-color:#34495e"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="1200" height="800" fill="#f5f7fa"/>
+  
+  <!-- 顶部导航栏 -->
+  <rect width="1200" height="60" fill="url(#headerGrad)"/>
+  <text x="30" y="38" fill="white" font-family="Microsoft YaHei" font-size="18" font-weight="bold">⚡ 惠电宿舍电费管理系统 - 学生端</text>
+  
+  <!-- 用户信息区域 -->
+  <rect x="950" y="10" width="230" height="40" rx="20" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="980" cy="30" r="15" fill="white"/>
+  <text x="980" y="35" text-anchor="middle" fill="#667eea" font-size="14">👤</text>
+  <text x="1010" y="35" fill="white" font-family="Microsoft YaHei" font-size="12">张三 (2021001)</text>
+  <text x="1100" y="35" fill="rgba(255,255,255,0.8)" font-family="Microsoft YaHei" font-size="11">退出</text>
+  
+  <!-- 主内容区域 -->
+  <rect x="20" y="80" width="1160" height="700" rx="10" fill="white"/>
+  
+  <!-- 标签页导航 -->
+  <rect x="20" y="80" width="1160" height="50" fill="#ecf0f1"/>
+  <rect x="20" y="80" width="150" height="50" fill="white"/>
+  <text x="95" y="112" text-anchor="middle" fill="#667eea" font-family="Microsoft YaHei" font-size="13" font-weight="bold">个人信息</text>
+  <text x="220" y="112" text-anchor="middle" fill="#7f8c8d" font-family="Microsoft YaHei" font-size="13">电费充值</text>
+  <text x="330" y="112" text-anchor="middle" fill="#7f8c8d" font-family="Microsoft YaHei" font-size="13">用电记录</text>
+  <text x="440" y="112" text-anchor="middle" fill="#7f8c8d" font-family="Microsoft YaHei" font-size="13">充值记录</text>
+  <text x="550" y="112" text-anchor="middle" fill="#7f8c8d" font-family="Microsoft YaHei" font-size="13">网页查询</text>
+  
+  <!-- 个人信息卡片 -->
+  <rect x="40" y="150" width="350" height="200" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="1"/>
+  <text x="60" y="180" fill="#2c3e50" font-family="Microsoft YaHei" font-size="16" font-weight="bold">📊 基本信息</text>
+  <line x1="60" y1="195" x2="370" y2="195" stroke="#dee2e6" stroke-width="1"/>
+  <text x="60" y="225" fill="#6c757d" font-family="Microsoft YaHei" font-size="12">姓名：张三</text>
+  <text x="60" y="250" fill="#6c757d" font-family="Microsoft YaHei" font-size="12">学号：2021001</text>
+  <text x="60" y="275" fill="#6c757d" font-family="Microsoft YaHei" font-size="12">宿舍：101</text>
+  <text x="60" y="300" fill="#6c757d" font-family="Microsoft YaHei" font-size="12">联系电话：13800138000</text>
+  <text x="60" y="325" fill="#6c757d" font-family="Microsoft YaHei" font-size="12">入住日期：2021-09-01</text>
+  
+  <!-- 电费余额卡片 -->
+  <rect x="410" y="150" width="350" height="200" rx="10" fill="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"/>
+  <rect x="410" y="150" width="350" height="200" rx="10" fill="#667eea"/>
+  <text x="430" y="180" fill="white" font-family="Microsoft YaHei" font-size="16" font-weight="bold">💰 电费余额</text>
+  <text x="585" y="260" text-anchor="middle" fill="white" font-family="Microsoft YaHei" font-size="48" font-weight="bold">¥ 128.50</text>
+  <text x="585" y="320" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Microsoft YaHei" font-size="12">剩余度数：256.8 kWh</text>
+  
+  <!-- 快捷操作卡片 -->
+  <rect x="780" y="150" width="380" height="200" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="1"/>
+  <text x="800" y="180" fill="#2c3e50" font-family="Microsoft YaHei" font-size="16" font-weight="bold">⚡ 快捷操作</text>
+  <rect x="800" y="200" width="160" height="50" rx="8" fill="#27ae60"/>
+  <text x="880" y="232" text-anchor="middle" fill="white" font-family="Microsoft YaHei" font-size="12" font-weight="bold">立即充值</text>
+  <rect x="980" y="200" width="160" height="50" rx="8" fill="#3498db"/>
+  <text x="1060" y="232" text-anchor="middle" fill="white" font-family="Microsoft YaHei" font-size="12" font-weight="bold">网页查询</text>
+  <rect x="800" y="270" width="160" height="50" rx="8" fill="#f39c12"/>
+  <text x="880" y="302" text-anchor="middle" fill="white" font-family="Microsoft YaHei" font-size="12" font-weight="bold">用电记录</text>
+  <rect x="980" y="270" width="160" height="50" rx="8" fill="#9b59b6"/>
+  <text x="1060" y="302" text-anchor="middle" fill="white" font-family="Microsoft YaHei" font-size="12" font-weight="bold">充值记录</text>
+  
+  <!-- 用电趋势图表 -->
+  <rect x="40" y="370" width="540" height="280" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="1"/>
+  <text x="60" y="400" fill="#2c3e50" font-family="Microsoft YaHei" font-size="16" font-weight="bold">📈 电费余额变化趋势</text>
+  <rect x="60" y="420" width="500" height="200" fill="white" stroke="#dee2e6" stroke-width="1"/>
+  <!-- 简化的图表线条 -->
+  <polyline points="80,580 140,560 200,570 260,540 320,550 380,520 440,530 500,500" fill="none" stroke="#3498db" stroke-width="3"/>
+  <circle cx="80" cy="580" r="4" fill="#3498db"/>
+  <circle cx="140" cy="560" r="4" fill="#3498db"/>
+  <circle cx="200" cy="570" r="4" fill="#3498db"/>
+  <circle cx="260" cy="540" r="4" fill="#3498db"/>
+  <circle cx="320" cy="550" r="4" fill="#3498db"/>
+  <circle cx="380" cy="520" r="4" fill="#3498db"/>
+  <circle cx="440" cy="530" r="4" fill="#3498db"/>
+  <circle cx="500" cy="500" r="4" fill="#3498db"/>
+  
+  <!-- 度数变化图表 -->
+  <rect x="600" y="370" width="560" height="280" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="1"/>
+  <text x="620" y="400" fill="#2c3e50" font-family="Microsoft YaHei" font-size="16" font-weight="bold">📊 度数变化趋势</text>
+  <rect x="620" y="420" width="520" height="200" fill="white" stroke="#dee2e6" stroke-width="1"/>
+  <!-- 简化的图表线条 -->
+  <polyline points="640,580 720,550 800,560 880,530 960,540 1040,510 1100,520" fill="none" stroke="#27ae60" stroke-width="3"/>
+  <circle cx="640" cy="580" r="4" fill="#27ae60"/>
+  <circle cx="720" cy="550" r="4" fill="#27ae60"/>
+  <circle cx="800" cy="560" r="4" fill="#27ae60"/>
+  <circle cx="880" cy="530" r="4" fill="#27ae60"/>
+  <circle cx="960" cy="540" r="4" fill="#27ae60"/>
+  <circle cx="1040" cy="510" r="4" fill="#27ae60"/>
+  <circle cx="1100" cy="520" r="4" fill="#27ae60"/>
+</svg>

@@ -365,7 +365,8 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Network.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Core.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6EntryPoint.prl \
-		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/build_pass.prf
+		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/build_pass.prf \
+		../../res.qrc
 	$(QMAKE) -o Makefile ..\..\GraduatingDesice.pro -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/spec_pre.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/device_config.prf:
@@ -663,6 +664,7 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Core.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6EntryPoint.prl:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/build_pass.prf:
+../../res.qrc:
 qmake: FORCE
 	@$(QMAKE) -o Makefile ..\..\GraduatingDesice.pro -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"
 

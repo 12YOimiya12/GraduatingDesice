@@ -330,6 +330,7 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/qt_config.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/win32-g++/qmake.conf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/exclusive_builds.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/toolchain.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/default_pre.prf \
@@ -355,12 +356,17 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/yacc.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/lex.prf \
 		../../GraduatingDesice.pro \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Charts.prl \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGLWidgets.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Widgets.prl \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGL.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Gui.prl \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Sql.prl \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Network.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Core.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6EntryPoint.prl \
-		.qmake.stash \
-		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/build_pass.prf
+		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/build_pass.prf \
+		../../res.qrc
 	$(QMAKE) -o Makefile ..\..\GraduatingDesice.pro -spec win32-g++ "CONFIG+=qtquickcompiler"
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/spec_pre.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/device_config.prf:
@@ -622,6 +628,7 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/qt_config.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/win32-g++/qmake.conf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/spec_post.prf:
+.qmake.stash:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/exclusive_builds.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/toolchain.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/default_pre.prf:
@@ -647,12 +654,17 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/yacc.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/lex.prf:
 ../../GraduatingDesice.pro:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6Charts.prl:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGLWidgets.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Widgets.prl:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGL.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Gui.prl:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6Sql.prl:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6Network.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Core.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6EntryPoint.prl:
-.qmake.stash:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/build_pass.prf:
+../../res.qrc:
 qmake: FORCE
 	@$(QMAKE) -o Makefile ..\..\GraduatingDesice.pro -spec win32-g++ "CONFIG+=qtquickcompiler"
 

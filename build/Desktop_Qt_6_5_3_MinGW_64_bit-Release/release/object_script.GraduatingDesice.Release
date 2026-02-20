@@ -1,0 +1,16 @@
+release/databasemanager.o
+release/electricityparser.o
+release/loding_wd.o
+release/main.o
+release/mainwindow.o
+release/studentinfo.o
+release/studentpanel.o
+release/adminpanel.o
+release/electricityquery.o
+release/qrc_res.o
+release/moc_electricityparser.o
+release/moc_loding_wd.o
+release/moc_mainwindow.o
+release/moc_studentpanel.o
+release/moc_adminpanel.o
+release/moc_electricityquery.o
