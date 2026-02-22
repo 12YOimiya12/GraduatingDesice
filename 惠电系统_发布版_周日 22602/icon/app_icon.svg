@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3498db;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2c3e50;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f1c40f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f39c12;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="buildingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ecf0f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#bdc3c7;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- 背景圆形 -->
+  <circle cx="128" cy="128" r="120" fill="url(#bgGrad)" filter="url(#shadow)"/>
+  
+  <!-- 宿舍建筑 -->
+  <g transform="translate(40, 60)">
+    <!-- 主建筑 -->
+    <rect x="20" y="40" width="80" height="100" rx="4" fill="url(#buildingGrad)"/>
+    <!-- 屋顶 -->
+    <polygon points="60,20 10,45 110,45" fill="#e74c3c"/>
+    <!-- 烟囱 -->
+    <rect x="75" y="10" width="12" height="20" fill="#7f8c8d"/>
+    <!-- 窗户 -->
+    <rect x="30" y="55" width="20" height="20" rx="2" fill="#3498db"/>
+    <rect x="70" y="55" width="20" height="20" rx="2" fill="#3498db"/>
+    <rect x="30" y="90" width="20" height="20" rx="2" fill="#3498db"/>
+    <rect x="70" y="90" width="20" height="20" rx="2" fill="#3498db"/>
+    <!-- 门 -->
+    <rect x="50" y="105" width="20" height="35" rx="2" fill="#8e44ad"/>
+    <!-- 门把手 -->
+    <circle cx="65" cy="125" r="2" fill="#f1c40f"/>
+  </g>
+  
+  <!-- 闪电符号 -->
+  <g transform="translate(140, 50)">
+    <polygon points="40,0 15,50 35,50 20,100 70,40 45,40 60,0" fill="url(#boltGrad)" filter="url(#shadow)"/>
+  </g>
+  
+  <!-- 电表圆环 -->
+  <circle cx="180" cy="180" r="35" fill="none" stroke="#27ae60" stroke-width="6"/>
+  <circle cx="180" cy="180" r="28" fill="#2c3e50"/>
+  
+  <!-- 电表指针 -->
+  <line x1="180" y1="180" x2="180" y2="158" stroke="#2ecc71" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="180" cy="180" r="4" fill="#2ecc71"/>
+  
+  <!-- 电表刻度 -->
+  <g fill="#ecf0f1" font-family="Arial" font-size="8" text-anchor="middle">
+    <text x="180" y="165">kWh</text>
+  </g>
+  
+  <!-- 装饰性小闪电 -->
+  <g fill="#f1c40f" opacity="0.8">
+    <polygon points="55,180 50,190 58,190 52,205 65,188 57,188 62,180" transform="scale(0.5) translate(20, 20)"/>
+    <polygon points="55,180 50,190 58,190 52,205 65,188 57,188 62,180" transform="scale(0.4) translate(350, 100)"/>
+  </g>
+</svg>
