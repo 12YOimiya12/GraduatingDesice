@@ -78,6 +78,8 @@ private:
     void displayResults();
     
     QLineEdit *m_urlEdit;                // URL输入框
+    QLineEdit *m_roomNoEdit;             // 房间号输入框
+    QLineEdit *m_cookieEdit;             // Cookie输入框
     QLineEdit *m_campusEdit;             // 校区输入框
     QLineEdit *m_areaEdit;               // 区域输入框
     QLineEdit *m_buildingEdit;           // 楼栋输入框

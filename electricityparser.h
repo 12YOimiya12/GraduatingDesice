@@ -37,23 +37,12 @@ public:
     ~ElectricityParser();
     
     /**
-     * @brief 获取电费数据（使用默认URL）
-     */
-    void fetchElectricityData();
-    
-    /**
-     * @brief 获取电费数据（指定URL）
-     * @param url 电费查询网页URL
-     */
-    void fetchElectricityData(const QString &url);
-    
-    /**
-     * @brief 获取电费数据（指定URL、宿舍和操作员信息）
-     * @param url 电费查询网页URL
-     * @param dormitory 宿舍号
+     * @brief 获取电费数据（指定房间号）
+     * @param roomNo 房间号
      * @param operatorName 操作员姓名
+     * @param cookie 登录Cookie（可选）
      */
-    void fetchElectricityData(const QString &url, const QString &dormitory, const QString &operatorName);
+    void fetchElectricityData(const QString &roomNo, const QString &operatorName, const QString &cookie = QString());
     
     // 获取解析结果的方法
     QString getRemainingKwh() const { return m_remainingKwh; }      // 剩余电费度数
@@ -98,6 +87,22 @@ private slots:
 
 private:
     /**
+     * @brief 请求账户余额页面
+     */
+    void fetchAccountBalance();
+    
+    /**
+     * @brief 请求房间剩余电量
+     */
+    void fetchRoomElecDegree();
+    
+    /**
+     * @brief 解析JSON内容
+     * @param jsonStr JSON内容
+     */
+    void parseJson(const QString &jsonStr);
+    
+    /**
      * @brief 解析HTML内容
      * @param html HTML内容
      */
@@ -117,10 +122,18 @@ private:
     QString m_dormitory;                 // 宿舍信息
     QString m_rawHtml;                   // 原始HTML内容
     QString m_currentOperatorName;       // 当前操作员姓名
-    QString m_currentUrl;                // 当前查询URL
+    QString m_roomNo;                    // 当前房间号
+    QString m_cookie;                    // 登录Cookie
     bool m_isFinished;                   // 是否完成标志
     bool m_hasError;                     // 错误标志
     QString m_errorString;               // 错误信息
+    
+    enum class FetchStep {
+        None,
+        FetchingBalance,
+        FetchingElecDegree
+    };
+    FetchStep m_currentStep;             // 当前请求步骤
 };
 
 #endif // ELECTRICITYPARSER_H
