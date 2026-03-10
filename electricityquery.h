@@ -20,7 +20,6 @@
  * - 显示电费查询URL和查询参数
  * - 提供浏览器打开和直接获取两种方式
  * - 显示解析结果（剩余度数、金额、宿舍信息）
- * - 显示原始HTML用于调试
  * - 提供进度条和状态显示
  */
 class ElectricityQuery : public QMainWindow
@@ -91,8 +90,6 @@ private:
     QLabel *m_resultKwhLabel;            // 剩余度数显示标签
     QLabel *m_resultAmountLabel;         // 剩余金额显示标签
     QLabel *m_resultDormLabel;           // 宿舍信息显示标签
-    QTextEdit *m_helpText;               // 帮助文本
-    QTextEdit *m_rawHtmlText;            // 原始HTML显示框
     QProgressBar *m_progressBar;         // 进度条
     QLabel *m_statusLabel;               // 状态标签
     

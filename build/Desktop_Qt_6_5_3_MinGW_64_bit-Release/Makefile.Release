@@ -1833,7 +1833,17 @@ release/electricityparser.o: ../../electricityparser.cpp ../../electricityparser
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtNetwork/QSslSocket \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QDebug \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QRegularExpressionMatch \
-		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QRegularExpressionMatchIterator
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QRegularExpressionMatchIterator \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QJsonDocument \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qjsondocument.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qjsonvalue.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qcborvalue.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qcborcommon.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/quuid.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QJsonObject \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qjsonobject.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QUrlQuery \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qurlquery.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\electricityparser.o ..\..\electricityparser.cpp
 
 release/loding_wd.o: ../../loding_wd.cpp ../../loding_wd.h \
@@ -3512,7 +3522,8 @@ release/electricityquery.o: ../../electricityquery.cpp ../../electricityquery.h 
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/qmessagebox.h \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/qdialog.h \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtGui/QDesktopServices \
-		../../../../../../QT_file/6.5.3/mingw_64/include/QtGui/qdesktopservices.h
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtGui/qdesktopservices.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QDebug
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\electricityquery.o ..\..\electricityquery.cpp
 
 release/qrc_res.o: release/qrc_res.cpp 

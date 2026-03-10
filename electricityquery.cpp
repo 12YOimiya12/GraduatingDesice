@@ -18,8 +18,6 @@ ElectricityQuery::ElectricityQuery(QWidget *parent)
     , m_resultKwhLabel(nullptr)
     , m_resultAmountLabel(nullptr)
     , m_resultDormLabel(nullptr)
-    , m_helpText(nullptr)
-    , m_rawHtmlText(nullptr)
     , m_progressBar(nullptr)
     , m_statusLabel(nullptr)
     , m_parser(new ElectricityParser(this))
@@ -148,35 +146,6 @@ void ElectricityQuery::initUI()
 
     mainLayout->addWidget(resultGroup);
 
-    QGroupBox *rawGroup = new QGroupBox("原始HTML（调试用）");
-    QVBoxLayout *rawLayout = new QVBoxLayout(rawGroup);
-    
-    m_rawHtmlText = new QTextEdit();
-    m_rawHtmlText->setReadOnly(true);
-    m_rawHtmlText->setMaximumHeight(150);
-    m_rawHtmlText->setPlaceholderText("获取数据后这里会显示原始HTML内容...");
-    rawLayout->addWidget(m_rawHtmlText);
-    
-    mainLayout->addWidget(rawGroup);
-
-    QGroupBox *helpGroup = new QGroupBox("说明");
-    QVBoxLayout *helpLayout = new QVBoxLayout(helpGroup);
-
-    m_helpText = new QTextEdit();
-    m_helpText->setReadOnly(true);
-    m_helpText->setMaximumHeight(120);
-    m_helpText->setHtml(R"(
-        <p><b>使用说明：</b></p>
-        <ol style="margin: 5px 0; padding-left: 20px;">
-            <li>点击"获取电费数据"直接尝试解析网页</li>
-            <li>如果需要登录，请先点击"在浏览器中打开"</li>
-            <li>在浏览器中完成登录后再回到这里获取数据</li>
-        </ol>
-    )");
-    helpLayout->addWidget(m_helpText);
-
-    mainLayout->addWidget(helpGroup);
-
     m_backBtn = new QPushButton("返回主界面");
     m_backBtn->setStyleSheet("padding: 12px; background-color: #95a5a6; color: white; border: none; border-radius: 5px;");
     connect(m_backBtn, &QPushButton::clicked, this, &ElectricityQuery::onBackClicked);
@@ -229,7 +198,6 @@ void ElectricityQuery::onFetchDataClicked()
     m_resultKwhLabel->setText("剩余电费度数: --");
     m_resultAmountLabel->setText("剩余金额: --");
     m_resultDormLabel->setText("宿舍信息: --");
-    m_rawHtmlText->clear();
     
     m_parser->fetchElectricityData(roomNo, operatorName, cookie);
 }
@@ -253,11 +221,6 @@ void ElectricityQuery::onErrorOccurred(const QString &error)
     m_statusLabel->setText(QString("错误: %1").arg(error));
     m_statusLabel->setStyleSheet("padding: 10px; background-color: #f8d7da; color: #721c24; border-radius: 5px; text-align: center;");
     
-    QString rawHtml = m_parser->getRawHtml();
-    if (!rawHtml.isEmpty()) {
-        m_rawHtmlText->setPlainText(rawHtml.left(5000));
-    }
-    
     QMessageBox::warning(this, "错误", QString("获取数据失败:\n%1\n\n注意：该网页可能需要先登录才能访问。").arg(error));
 }
 
@@ -266,7 +229,6 @@ void ElectricityQuery::displayResults()
     QString kwh = m_parser->getRemainingKwh();
     QString amount = m_parser->getRemainingAmount();
     QString dorm = m_parser->getDormitory();
-    QString rawHtml = m_parser->getRawHtml();
     
     if (!kwh.isEmpty()) {
         m_resultKwhLabel->setText(QString("剩余电费度数: <b>%1</b> 度").arg(kwh));
@@ -288,11 +250,7 @@ void ElectricityQuery::displayResults()
         m_resultDormLabel->setText("宿舍信息: 未找到");
     }
     
-    if (!rawHtml.isEmpty()) {
-        m_rawHtmlText->setPlainText(rawHtml.left(5000));
-    }
-    
-    if (kwh.isEmpty() && rawHtml.isEmpty()) {
+    if (kwh.isEmpty()) {
         QMessageBox::information(this, "提示", "未能获取到数据。\n\n可能原因：\n1. 网页需要先登录\n2. 网络连接问题\n3. 网址不正确\n\n建议：先点击'在浏览器中打开'完成登录，再尝试获取数据。");
     }
 }
