@@ -89,6 +89,7 @@ private:
     QPushButton *m_backBtn;              // 返回按钮
     QLabel *m_resultKwhLabel;            // 剩余度数显示标签
     QLabel *m_resultAmountLabel;         // 剩余金额显示标签
+    QLabel *m_resultAccountLabel;        // 学生账号显示标签
     QLabel *m_resultDormLabel;           // 宿舍信息显示标签
     QProgressBar *m_progressBar;         // 进度条
     QLabel *m_statusLabel;               // 状态标签

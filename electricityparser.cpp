@@ -17,6 +17,7 @@ ElectricityParser::ElectricityParser(QObject *parent)
     , m_manager(new QNetworkAccessManager(this))
     , m_remainingKwh("")
     , m_remainingAmount("")
+    , m_studentAccount("")
     , m_dormitory("")
     , m_rawHtml("")
     , m_currentOperatorName("系统")
@@ -41,6 +42,7 @@ void ElectricityParser::fetchElectricityData(const QString &roomNo, const QStrin
     m_errorString = "";
     m_remainingKwh = "";
     m_remainingAmount = "";
+    m_studentAccount = "";
     m_dormitory = roomNo;
     m_rawHtml = "";
     m_currentOperatorName = operatorName;
@@ -214,6 +216,10 @@ void ElectricityParser::parseHtml(const QString &html)
     
     QList<QPair<QString, QString>> patterns;
     
+    // 匹配学生账号（根据一卡通页面结构：转账账户：<span class="c_3497ea">122060200133</span>）
+    patterns << qMakePair(QString("转账账户[：:]\\s*<[^>]*c_3497ea[^>]*>\\s*(\\d+)"), QString("account"));
+    patterns << qMakePair(QString("账户[：:]\\s*<[^>]*c_3497ea[^>]*>\\s*(\\d+)"), QString("account"));
+    
     // 匹配账户余额（根据一卡通页面结构：账户余额： <span class="c_3497ea">35.22 </span> 元）
     patterns << qMakePair(QString("账户余额[：:]\\s*<[^>]*c_3497ea[^>]*>\\s*(\\d+\\.?\\d*)"), QString("amount"));
     patterns << qMakePair(QString("余额[：:]\\s*<[^>]*c_3497ea[^>]*>\\s*(\\d+\\.?\\d*)"), QString("amount"));
@@ -226,12 +232,14 @@ void ElectricityParser::parseHtml(const QString &html)
             if (patternPair.second == "amount" && m_remainingAmount.isEmpty()) {
                 m_remainingAmount = result;
                 qDebug() << "Found remaining amount with pattern:" << patternPair.first << "value:" << m_remainingAmount;
-                break;
+            } else if (patternPair.second == "account" && m_studentAccount.isEmpty()) {
+                m_studentAccount = result;
+                qDebug() << "Found student account with pattern:" << patternPair.first << "value:" << m_studentAccount;
             }
         }
     }
     
-    qDebug() << "HTML parsing completed - Amount:" << m_remainingAmount;
+    qDebug() << "HTML parsing completed - Account:" << m_studentAccount << "Amount:" << m_remainingAmount;
 }
 
 QString ElectricityParser::extractByPattern(const QString &html, const QString &pattern)

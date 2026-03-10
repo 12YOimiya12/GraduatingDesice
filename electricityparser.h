@@ -47,6 +47,7 @@ public:
     // 获取解析结果的方法
     QString getRemainingKwh() const { return m_remainingKwh; }      // 剩余电费度数
     QString getRemainingAmount() const { return m_remainingAmount; } // 剩余金额
+    QString getStudentAccount() const { return m_studentAccount; }  // 学生账号
     QString getDormitory() const { return m_dormitory; }            // 宿舍信息
     QString getRawHtml() const { return m_rawHtml; }                // 原始HTML
     bool isFinished() const { return m_isFinished; }                // 是否完成
@@ -119,6 +120,7 @@ private:
     QNetworkAccessManager *m_manager;    // 网络访问管理器
     QString m_remainingKwh;              // 剩余电费度数
     QString m_remainingAmount;           // 剩余金额
+    QString m_studentAccount;            // 学生账号
     QString m_dormitory;                 // 宿舍信息
     QString m_rawHtml;                   // 原始HTML内容
     QString m_currentOperatorName;       // 当前操作员姓名

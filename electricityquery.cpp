@@ -17,6 +17,7 @@ ElectricityQuery::ElectricityQuery(QWidget *parent)
     , m_backBtn(nullptr)
     , m_resultKwhLabel(nullptr)
     , m_resultAmountLabel(nullptr)
+    , m_resultAccountLabel(nullptr)
     , m_resultDormLabel(nullptr)
     , m_progressBar(nullptr)
     , m_statusLabel(nullptr)
@@ -132,6 +133,10 @@ void ElectricityQuery::initUI()
     QGroupBox *resultGroup = new QGroupBox("查询结果");
     QVBoxLayout *resultLayout = new QVBoxLayout(resultGroup);
 
+    m_resultAccountLabel = new QLabel("学生账号: --");
+    m_resultAccountLabel->setStyleSheet("font-size: 16px; color: #8e44ad; padding: 5px;");
+    resultLayout->addWidget(m_resultAccountLabel);
+
     m_resultKwhLabel = new QLabel("剩余电费度数: --");
     m_resultKwhLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #2980b9; padding: 10px;");
     resultLayout->addWidget(m_resultKwhLabel);
@@ -195,6 +200,7 @@ void ElectricityQuery::onFetchDataClicked()
     m_progressBar->setVisible(true);
     m_fetchBtn->setEnabled(false);
     
+    m_resultAccountLabel->setText("学生账号: --");
     m_resultKwhLabel->setText("剩余电费度数: --");
     m_resultAmountLabel->setText("剩余金额: --");
     m_resultDormLabel->setText("宿舍信息: --");
@@ -228,7 +234,14 @@ void ElectricityQuery::displayResults()
 {
     QString kwh = m_parser->getRemainingKwh();
     QString amount = m_parser->getRemainingAmount();
+    QString account = m_parser->getStudentAccount();
     QString dorm = m_parser->getDormitory();
+    
+    if (!account.isEmpty()) {
+        m_resultAccountLabel->setText(QString("学生账号: %1").arg(account));
+    } else {
+        m_resultAccountLabel->setText("学生账号: 未找到");
+    }
     
     if (!kwh.isEmpty()) {
         m_resultKwhLabel->setText(QString("剩余电费度数: <b>%1</b> 度").arg(kwh));
