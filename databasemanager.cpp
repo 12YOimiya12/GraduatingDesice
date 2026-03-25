@@ -190,6 +190,26 @@ bool DatabaseManager::createTables()
         return false;
     }
     
+    // 创建电费查询记录表
+    QString createElectricityQueryRecordsTable = R"(
+        CREATE TABLE IF NOT EXISTS electricity_query_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_account TEXT,
+            dormitory TEXT NOT NULL,
+            remaining_kwh REAL NOT NULL DEFAULT 0.0,
+            remaining_amount REAL NOT NULL DEFAULT 0.0,
+            operator_name TEXT,
+            query_url TEXT,
+            query_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            remark TEXT
+        )
+    )";
+    
+    if (!query.exec(createElectricityQueryRecordsTable)) {
+        qDebug() << "Create electricity_query_records table error:" << query.lastError().text();
+        return false;
+    }
+    
     return true;
 }
 
@@ -209,7 +229,10 @@ bool DatabaseManager::createIndexes()
         "CREATE INDEX IF NOT EXISTS idx_electricity_change_dorm ON electricity_change_records(dormitory)",
         "CREATE INDEX IF NOT EXISTS idx_electricity_change_time ON electricity_change_records(change_time)",
         "CREATE INDEX IF NOT EXISTS idx_electricity_kwh_change_dorm ON electricity_kwh_change_records(dormitory)",
-        "CREATE INDEX IF NOT EXISTS idx_electricity_kwh_change_time ON electricity_kwh_change_records(change_time)"
+        "CREATE INDEX IF NOT EXISTS idx_electricity_kwh_change_time ON electricity_kwh_change_records(change_time)",
+        "CREATE INDEX IF NOT EXISTS idx_electricity_query_dorm ON electricity_query_records(dormitory)",
+        "CREATE INDEX IF NOT EXISTS idx_electricity_query_student ON electricity_query_records(student_account)",
+        "CREATE INDEX IF NOT EXISTS idx_electricity_query_time ON electricity_query_records(query_time)"
     };
     
     for (const QString& sql : indexQueries) {
@@ -599,6 +622,221 @@ QList<ElectricityRecord> DatabaseManager::getElectricityRecordsByUser(int userId
     }
     
     return records;
+}
+
+bool DatabaseManager::addElectricityQueryRecord(const ElectricityQueryRecord& record)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        INSERT INTO electricity_query_records 
+        (student_account, dormitory, remaining_kwh, remaining_amount, operator_name, query_url, remark)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    )");
+    
+    query.addBindValue(record.studentAccount);
+    query.addBindValue(record.dormitory);
+    query.addBindValue(record.remainingKwh);
+    query.addBindValue(record.remainingAmount);
+    query.addBindValue(record.operatorName);
+    query.addBindValue(record.queryUrl);
+    query.addBindValue(record.remark);
+    
+    if (!query.exec()) {
+        qDebug() << "Add electricity query record error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+QList<ElectricityQueryRecord> DatabaseManager::getElectricityQueryRecordsByDormitory(const QString& dormitory)
+{
+    QList<ElectricityQueryRecord> records;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM electricity_query_records WHERE dormitory=? ORDER BY query_time DESC");
+    query.addBindValue(dormitory);
+    
+    if (!query.exec()) {
+        qDebug() << "Get electricity query records error:" << query.lastError().text();
+        return records;
+    }
+    
+    while (query.next()) {
+        ElectricityQueryRecord record;
+        record.id = query.value("id").toInt();
+        record.studentAccount = query.value("student_account").toString();
+        record.dormitory = query.value("dormitory").toString();
+        record.remainingKwh = query.value("remaining_kwh").toDouble();
+        record.remainingAmount = query.value("remaining_amount").toDouble();
+        record.operatorName = query.value("operator_name").toString();
+        record.queryUrl = query.value("query_url").toString();
+        record.queryTime = query.value("query_time").toDateTime();
+        record.remark = query.value("remark").toString();
+        records.append(record);
+    }
+    
+    return records;
+}
+
+QList<ElectricityQueryRecord> DatabaseManager::getElectricityQueryRecordsByStudentAccount(const QString& studentAccount)
+{
+    QList<ElectricityQueryRecord> records;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM electricity_query_records WHERE student_account=? ORDER BY query_time DESC");
+    query.addBindValue(studentAccount);
+    
+    if (!query.exec()) {
+        qDebug() << "Get electricity query records error:" << query.lastError().text();
+        return records;
+    }
+    
+    while (query.next()) {
+        ElectricityQueryRecord record;
+        record.id = query.value("id").toInt();
+        record.studentAccount = query.value("student_account").toString();
+        record.dormitory = query.value("dormitory").toString();
+        record.remainingKwh = query.value("remaining_kwh").toDouble();
+        record.remainingAmount = query.value("remaining_amount").toDouble();
+        record.operatorName = query.value("operator_name").toString();
+        record.queryUrl = query.value("query_url").toString();
+        record.queryTime = query.value("query_time").toDateTime();
+        record.remark = query.value("remark").toString();
+        records.append(record);
+    }
+    
+    return records;
+}
+
+QList<ElectricityQueryRecord> DatabaseManager::getAllElectricityQueryRecords()
+{
+    QList<ElectricityQueryRecord> records;
+    
+    QSqlQuery query("SELECT * FROM electricity_query_records ORDER BY query_time DESC");
+    
+    if (!query.exec()) {
+        qDebug() << "Get all electricity query records error:" << query.lastError().text();
+        return records;
+    }
+    
+    while (query.next()) {
+        ElectricityQueryRecord record;
+        record.id = query.value("id").toInt();
+        record.studentAccount = query.value("student_account").toString();
+        record.dormitory = query.value("dormitory").toString();
+        record.remainingKwh = query.value("remaining_kwh").toDouble();
+        record.remainingAmount = query.value("remaining_amount").toDouble();
+        record.operatorName = query.value("operator_name").toString();
+        record.queryUrl = query.value("query_url").toString();
+        record.queryTime = query.value("query_time").toDateTime();
+        record.remark = query.value("remark").toString();
+        records.append(record);
+    }
+    
+    return records;
+}
+
+bool DatabaseManager::saveElectricityQueryResult(const QString& studentAccount, const QString& dormitory, 
+                                                  double remainingKwh, double remainingAmount, 
+                                                  const QString& operatorName, const QString& queryUrl)
+{
+    m_db.transaction();
+    
+    // 1. 保存查询记录到 electricity_query_records 表
+    ElectricityQueryRecord queryRecord;
+    queryRecord.studentAccount = studentAccount;
+    queryRecord.dormitory = dormitory;
+    queryRecord.remainingKwh = remainingKwh;
+    queryRecord.remainingAmount = remainingAmount;
+    queryRecord.operatorName = operatorName;
+    queryRecord.queryUrl = queryUrl;
+    queryRecord.remark = QString("网页查询 - 学生账号:%1, 剩余度数:%2, 剩余金额:%3")
+                            .arg(studentAccount)
+                            .arg(remainingKwh, 0, 'f', 2)
+                            .arg(remainingAmount, 0, 'f', 2);
+    
+    if (!addElectricityQueryRecord(queryRecord)) {
+        m_db.rollback();
+        qDebug() << "Failed to add electricity query record";
+        return false;
+    }
+    
+    // 2. 更新 dormitories 表（宿舍信息）
+    DormitoryInfo dorm = getDormitoryByNumber(dormitory);
+    double oldKwh = dorm.id != -1 ? dorm.remainingKwh : 0.0;
+    double oldAmount = dorm.id != -1 ? dorm.currentBalance : 0.0;
+    double kwhChange = remainingKwh - oldKwh;
+    double amountChange = remainingAmount - oldAmount;
+    
+    if (dorm.id != -1) {
+        // 更新宿舍度数和余额
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE dormitories SET remaining_kwh=?, current_balance=?, last_kwh_update=CURRENT_TIMESTAMP, last_update=CURRENT_TIMESTAMP WHERE dorm_number=?");
+        updateQuery.addBindValue(remainingKwh);
+        updateQuery.addBindValue(remainingAmount);
+        updateQuery.addBindValue(dormitory);
+        
+        if (!updateQuery.exec()) {
+            qDebug() << "Update dormitory error:" << updateQuery.lastError().text();
+        }
+    } else {
+        // 如果宿舍不存在，创建新宿舍记录
+        DormitoryInfo newDorm;
+        newDorm.dormNumber = dormitory;
+        newDorm.building = "未知";
+        newDorm.floor = 0;
+        newDorm.currentBalance = remainingAmount;
+        newDorm.lastReading = 0.0;
+        newDorm.remainingKwh = remainingKwh;
+        
+        if (!addDormitory(newDorm)) {
+            qDebug() << "Failed to add new dormitory";
+        }
+    }
+    
+    // 3. 记录度数变动到 electricity_kwh_change_records 表
+    ElectricityKwhChangeRecord kwhRecord;
+    kwhRecord.dormitory = dormitory;
+    kwhRecord.kwhBefore = oldKwh;
+    kwhRecord.kwhAfter = remainingKwh;
+    kwhRecord.kwhChange = kwhChange;
+    kwhRecord.changeType = "网页查询";
+    kwhRecord.operatorName = operatorName;
+    kwhRecord.remark = QString("学生账号:%1, 度数变动: %2 度").arg(studentAccount).arg(kwhChange, 0, 'f', 2);
+    kwhRecord.queryUrl = queryUrl;
+    
+    if (!addElectricityKwhChangeRecord(kwhRecord)) {
+        qDebug() << "Failed to add kwh change record";
+    }
+    
+    // 4. 记录电费金额变动到 electricity_change_records 表
+    // 查找该宿舍关联的用户
+    QList<UserInfo> users = getStudents();
+    for (const UserInfo& user : users) {
+        if (user.dormitory == dormitory) {
+            ElectricityChangeRecord changeRecord;
+            changeRecord.userId = user.id;
+            changeRecord.studentId = studentAccount.isEmpty() ? user.studentId : studentAccount;
+            changeRecord.dormitory = dormitory;
+            changeRecord.changeAmount = amountChange;
+            changeRecord.balanceBefore = oldAmount;
+            changeRecord.balanceAfter = remainingAmount;
+            changeRecord.changeType = "网页查询";
+            changeRecord.operatorName = operatorName;
+            changeRecord.remark = QString("网页查询更新余额，变动: %1 元").arg(amountChange, 0, 'f', 2);
+            
+            if (!addElectricityChangeRecord(changeRecord)) {
+                qDebug() << "Failed to add electricity change record for user:" << user.username;
+            }
+            break; // 只记录第一个匹配的用户
+        }
+    }
+    
+    m_db.commit();
+    qDebug() << "Electricity query result saved successfully - Student:" << studentAccount 
+             << "Dorm:" << dormitory << "Kwh:" << remainingKwh << "Amount:" << remainingAmount;
+    return true;
 }
 
 bool DatabaseManager::generateSampleKwhChangeRecords()

@@ -19,6 +19,9 @@
 #include <QDateTimeAxis>
 #include <QValueAxis>
 #include <QDateTime>
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
 
 AdminPanel::AdminPanel(QWidget *parent)
     : QMainWindow(parent)
@@ -27,6 +30,7 @@ AdminPanel::AdminPanel(QWidget *parent)
     , m_dormitoriesTable(nullptr)
     , m_rechargeRecordsTable(nullptr)
     , m_electricityRecordsTable(nullptr)
+    , m_kwhChangeRecordsTable(nullptr)
     , m_rechargeChartView(nullptr)
     , m_electricityChartView(nullptr)
     , m_totalStudentsLabel(nullptr)
@@ -136,6 +140,26 @@ void AdminPanel::initUI()
     connect(rechargeForStudentBtn, &QPushButton::clicked, this, &AdminPanel::onRechargeForStudentClicked);
     studentsBtnLayout->addWidget(rechargeForStudentBtn);
     
+    QPushButton *batchRechargeBtn = new QPushButton("批量充值");
+    batchRechargeBtn->setStyleSheet("padding: 8px 16px; background-color: #1abc9c; color: white; border: none; border-radius: 4px;");
+    connect(batchRechargeBtn, &QPushButton::clicked, this, &AdminPanel::onBatchRechargeClicked);
+    studentsBtnLayout->addWidget(batchRechargeBtn);
+    
+    QPushButton *batchDeductBtn = new QPushButton("批量扣费");
+    batchDeductBtn->setStyleSheet("padding: 8px 16px; background-color: #e67e22; color: white; border: none; border-radius: 4px;");
+    connect(batchDeductBtn, &QPushButton::clicked, this, &AdminPanel::onBatchDeductClicked);
+    studentsBtnLayout->addWidget(batchDeductBtn);
+    
+    QPushButton *exportBtn = new QPushButton("导出Excel");
+    exportBtn->setStyleSheet("padding: 8px 16px; background-color: #34495e; color: white; border: none; border-radius: 4px;");
+    connect(exportBtn, &QPushButton::clicked, this, &AdminPanel::onExportToExcelClicked);
+    studentsBtnLayout->addWidget(exportBtn);
+    
+    QPushButton *importBtn = new QPushButton("导入Excel");
+    importBtn->setStyleSheet("padding: 8px 16px; background-color: #16a085; color: white; border: none; border-radius: 4px;");
+    connect(importBtn, &QPushButton::clicked, this, &AdminPanel::onImportFromExcelClicked);
+    studentsBtnLayout->addWidget(importBtn);
+    
     studentsBtnLayout->addStretch();
     
     studentsLayout->addLayout(studentsBtnLayout);
@@ -185,11 +209,24 @@ void AdminPanel::initUI()
     
     m_dormitoriesTable = new QTableWidget();
     m_dormitoriesTable->setColumnCount(7);
-    m_dormitoriesTable->setHorizontalHeaderLabels({"ID", "宿舍号", "楼栋", "楼层", "剩余度数(度)", "最后度数更新时间", "最后度数"});
+    m_dormitoriesTable->setHorizontalHeaderLabels({"ID", "宿舍号", "楼栋", "楼层", "剩余度数(度)", "当前余额(元)", "最后更新时间"});
     m_dormitoriesTable->horizontalHeader()->setStretchLastSection(true);
     m_dormitoriesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_dormitoriesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_dormitoriesTable->setMaximumHeight(200);
     dormitoriesLayout->addWidget(m_dormitoriesTable);
+    
+    QLabel *kwhChangeTitle = new QLabel("度数变化记录");
+    kwhChangeTitle->setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px; margin-top: 10px;");
+    dormitoriesLayout->addWidget(kwhChangeTitle);
+    
+    m_kwhChangeRecordsTable = new QTableWidget();
+    m_kwhChangeRecordsTable->setColumnCount(8);
+    m_kwhChangeRecordsTable->setHorizontalHeaderLabels({"ID", "时间", "宿舍", "变动前(度)", "变动后(度)", "变动量(度)", "变动类型", "操作人"});
+    m_kwhChangeRecordsTable->horizontalHeader()->setStretchLastSection(true);
+    m_kwhChangeRecordsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_kwhChangeRecordsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    dormitoriesLayout->addWidget(m_kwhChangeRecordsTable);
     
     tabWidget->addTab(dormitoriesTab, "宿舍管理");
     
@@ -321,8 +358,29 @@ void AdminPanel::loadDormitories()
         m_dormitoriesTable->setItem(i, 2, new QTableWidgetItem(dorm.building));
         m_dormitoriesTable->setItem(i, 3, new QTableWidgetItem(QString::number(dorm.floor)));
         m_dormitoriesTable->setItem(i, 4, new QTableWidgetItem(QString::number(dorm.remainingKwh, 'f', 2)));
-        m_dormitoriesTable->setItem(i, 5, new QTableWidgetItem(dorm.lastKwhUpdate.toString("yyyy-MM-dd hh:mm:ss")));
-        m_dormitoriesTable->setItem(i, 6, new QTableWidgetItem(QString::number(dorm.lastReading, 'f', 2)));
+        m_dormitoriesTable->setItem(i, 5, new QTableWidgetItem(QString::number(dorm.currentBalance, 'f', 2)));
+        m_dormitoriesTable->setItem(i, 6, new QTableWidgetItem(dorm.lastKwhUpdate.toString("yyyy-MM-dd hh:mm:ss")));
+    }
+    
+    loadKwhChangeRecords();
+}
+
+void AdminPanel::loadKwhChangeRecords()
+{
+    QList<ElectricityKwhChangeRecord> records = DatabaseManager::instance().getAllElectricityKwhChangeRecords();
+    
+    m_kwhChangeRecordsTable->setRowCount(records.size());
+    
+    for (int i = 0; i < records.size(); ++i) {
+        const ElectricityKwhChangeRecord& record = records[i];
+        m_kwhChangeRecordsTable->setItem(i, 0, new QTableWidgetItem(QString::number(record.id)));
+        m_kwhChangeRecordsTable->setItem(i, 1, new QTableWidgetItem(record.changeTime.toString("yyyy-MM-dd hh:mm:ss")));
+        m_kwhChangeRecordsTable->setItem(i, 2, new QTableWidgetItem(record.dormitory));
+        m_kwhChangeRecordsTable->setItem(i, 3, new QTableWidgetItem(QString::number(record.kwhBefore, 'f', 2)));
+        m_kwhChangeRecordsTable->setItem(i, 4, new QTableWidgetItem(QString::number(record.kwhAfter, 'f', 2)));
+        m_kwhChangeRecordsTable->setItem(i, 5, new QTableWidgetItem(QString::number(record.kwhChange, 'f', 2)));
+        m_kwhChangeRecordsTable->setItem(i, 6, new QTableWidgetItem(record.changeType));
+        m_kwhChangeRecordsTable->setItem(i, 7, new QTableWidgetItem(record.operatorName));
     }
 }
 
@@ -639,6 +697,7 @@ void AdminPanel::onRefreshClicked()
     loadStatistics();
     loadStudents();
     loadDormitories();
+    loadKwhChangeRecords();
     loadRechargeRecords();
     loadElectricityRecords();
     updateRechargeChart();
@@ -743,4 +802,188 @@ void AdminPanel::updateElectricityChart()
     chart->legend()->setAlignment(Qt::AlignBottom);
     
     m_electricityChartView->setChart(chart);
+}
+
+void AdminPanel::onBatchRechargeClicked()
+{
+    QList<QTableWidgetItem*> selectedItems = m_studentsTable->selectedItems();
+    if (selectedItems.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请先选择要充值的学生！");
+        return;
+    }
+    
+    QSet<int> selectedRows;
+    for (QTableWidgetItem* item : selectedItems) {
+        selectedRows.insert(item->row());
+    }
+    
+    bool ok;
+    double amount = QInputDialog::getDouble(this, "批量充值", "请输入充值金额（元）:", 0, 0, 10000, 2, &ok);
+    if (!ok || amount <= 0) {
+        return;
+    }
+    
+    int successCount = 0;
+    for (int row : selectedRows) {
+        int userId = m_studentsTable->item(row, 0)->text().toInt();
+        if (DatabaseManager::instance().recharge(userId, amount, m_currentUser.name)) {
+            successCount++;
+        }
+    }
+    
+    loadStudents();
+    loadDormitories();
+    loadStatistics();
+    loadRechargeRecords();
+    updateRechargeChart();
+    
+    QMessageBox::information(this, "批量充值完成", 
+        QString("成功为 %1 名学生充值 %2 元").arg(successCount).arg(amount));
+}
+
+void AdminPanel::onBatchDeductClicked()
+{
+    QList<QTableWidgetItem*> selectedItems = m_studentsTable->selectedItems();
+    if (selectedItems.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请先选择要扣费的学生！");
+        return;
+    }
+    
+    QSet<int> selectedRows;
+    for (QTableWidgetItem* item : selectedItems) {
+        selectedRows.insert(item->row());
+    }
+    
+    bool ok;
+    double amount = QInputDialog::getDouble(this, "批量扣费", "请输入扣费金额（元）:", 0, 0, 10000, 2, &ok);
+    if (!ok || amount <= 0) {
+        return;
+    }
+    
+    int successCount = 0;
+    for (int row : selectedRows) {
+        int userId = m_studentsTable->item(row, 0)->text().toInt();
+        UserInfo user = DatabaseManager::instance().getUserById(userId);
+        double newBalance = user.balance - amount;
+        if (newBalance < 0) newBalance = 0;
+        
+        if (DatabaseManager::instance().updateBalance(userId, newBalance)) {
+            ElectricityChangeRecord changeRecord;
+            changeRecord.userId = userId;
+            changeRecord.studentId = user.studentId;
+            changeRecord.dormitory = user.dormitory;
+            changeRecord.changeAmount = -amount;
+            changeRecord.balanceBefore = user.balance;
+            changeRecord.balanceAfter = newBalance;
+            changeRecord.changeType = "批量扣费";
+            changeRecord.operatorName = m_currentUser.name;
+            changeRecord.remark = QString("批量扣费 %1 元").arg(amount);
+            DatabaseManager::instance().addElectricityChangeRecord(changeRecord);
+            successCount++;
+        }
+    }
+    
+    loadStudents();
+    loadDormitories();
+    loadStatistics();
+    
+    QMessageBox::information(this, "批量扣费完成", 
+        QString("成功为 %1 名学生扣费 %2 元").arg(successCount).arg(amount));
+}
+
+void AdminPanel::onExportToExcelClicked()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "导出Excel", "", "CSV文件 (*.csv);;所有文件 (*.*)");
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "错误", "无法创建文件！");
+        return;
+    }
+
+    QTextStream out(&file);
+    out.setGenerateByteOrderMark(true);
+
+    out << "ID,用户名,姓名,学号,宿舍,余额(元),角色\n";
+
+    QList<UserInfo> students = DatabaseManager::instance().getAllUsers();
+    for (const UserInfo& student : students) {
+        out << student.id << ","
+            << student.username << ","
+            << student.name << ","
+            << student.studentId << ","
+            << student.dormitory << ","
+            << QString::number(student.balance, 'f', 2) << ","
+            << (student.role == 0 ? "管理员" : "学生") << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, "导出成功", QString("数据已导出到:\n%1").arg(fileName));
+}
+
+void AdminPanel::onImportFromExcelClicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, "导入Excel", "", "CSV文件 (*.csv);;所有文件 (*.*)");
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "错误", "无法打开文件！");
+        return;
+    }
+
+    QTextStream in(&file);
+
+    in.readLine();
+
+    int importCount = 0;
+    int updateCount = 0;
+
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        QStringList fields = line.split(',');
+
+        if (fields.size() >= 5) {
+            QString username = fields[1].trimmed();
+            QString name = fields[2].trimmed();
+            QString studentId = fields[3].trimmed();
+            QString dormitory = fields[4].trimmed();
+
+            UserInfo existingUser = DatabaseManager::instance().getUserByUsername(username);
+
+            if (existingUser.id == -1) {
+                UserInfo newUser;
+                newUser.username = username;
+                newUser.password = "123456";
+                newUser.name = name;
+                newUser.studentId = studentId;
+                newUser.dormitory = dormitory;
+                newUser.role = 1;
+                newUser.balance = 0.0;
+
+                if (DatabaseManager::instance().addUser(newUser)) {
+                    importCount++;
+                }
+            } else {
+                existingUser.name = name;
+                existingUser.studentId = studentId;
+                existingUser.dormitory = dormitory;
+
+                if (DatabaseManager::instance().updateUser(existingUser)) {
+                    updateCount++;
+                }
+            }
+        }
+    }
+
+    file.close();
+    loadStudents();
+    loadStatistics();
+
+    QMessageBox::information(this, "导入成功", QString("导入完成！\n新增: %1 条\n更新: %2 条").arg(importCount).arg(updateCount));
 }

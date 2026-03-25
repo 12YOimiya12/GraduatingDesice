@@ -99,6 +99,26 @@ private slots:
      */
     void onTabChanged(int index);
     
+    /**
+     * @brief 批量充值按钮点击槽函数
+     */
+    void onBatchRechargeClicked();
+    
+    /**
+     * @brief 批量扣费按钮点击槽函数
+     */
+    void onBatchDeductClicked();
+    
+    /**
+     * @brief 导出数据到Excel按钮点击槽函数
+     */
+    void onExportToExcelClicked();
+    
+    /**
+     * @brief 从Excel导入数据按钮点击槽函数
+     */
+    void onImportFromExcelClicked();
+    
 private:
     /**
      * @brief 初始化用户界面
@@ -145,11 +165,17 @@ private:
      */
     void updateElectricityChart();
     
+    /**
+     * @brief 加载度数变化记录
+     */
+    void loadKwhChangeRecords();
+    
     QLabel *m_userInfoLabel;                // 用户信息标签
     QTableWidget *m_studentsTable;          // 学生列表表格
     QTableWidget *m_dormitoriesTable;       // 宿舍列表表格
     QTableWidget *m_rechargeRecordsTable;   // 充值记录表格
     QTableWidget *m_electricityRecordsTable; // 用电记录表格
+    QTableWidget *m_kwhChangeRecordsTable;  // 度数变化记录表格
     QChartView *m_rechargeChartView;        // 充值趋势图表视图
     QChartView *m_electricityChartView;     // 用电趋势图表视图
     QLabel *m_totalStudentsLabel;           // 总学生数标签

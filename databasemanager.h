@@ -85,6 +85,19 @@ struct ElectricityKwhChangeRecord {
     QString queryUrl;           // 查询网址
 };
 
+// 电费查询记录结构体
+struct ElectricityQueryRecord {
+    int id;                     // 记录ID
+    QString studentAccount;     // 学生账号（一卡通号）
+    QString dormitory;          // 宿舍号
+    double remainingKwh;        // 剩余度数
+    double remainingAmount;     // 剩余金额
+    QString operatorName;       // 操作员
+    QString queryUrl;           // 查询网址
+    QDateTime queryTime;        // 查询时间
+    QString remark;             // 备注
+};
+
 /**
  * @brief 数据库管理类 - 单例模式
  * 
@@ -159,6 +172,17 @@ public:
     
     // 宿舍度数管理方法
     bool updateDormitoryKwh(const QString& dormNumber, double newKwh, const QString& operatorName = "系统", const QString& queryUrl = "");
+    
+    // 电费查询记录相关方法
+    bool addElectricityQueryRecord(const ElectricityQueryRecord& record);
+    QList<ElectricityQueryRecord> getElectricityQueryRecordsByDormitory(const QString& dormitory);
+    QList<ElectricityQueryRecord> getElectricityQueryRecordsByStudentAccount(const QString& studentAccount);
+    QList<ElectricityQueryRecord> getAllElectricityQueryRecords();
+    
+    // 保存完整电费查询结果（包含学生账号、剩余电费、剩余度数、宿舍号）
+    bool saveElectricityQueryResult(const QString& studentAccount, const QString& dormitory, 
+                                    double remainingKwh, double remainingAmount, 
+                                    const QString& operatorName = "系统", const QString& queryUrl = "");
     
     /**
      * @brief 用户充值操作

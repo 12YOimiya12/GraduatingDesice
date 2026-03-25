@@ -127,6 +127,11 @@ private:
      */
     void updateKwhChart();
     
+    /**
+     * @brief 检查低度数预警
+     */
+    void checkLowKwhWarning();
+    
     QLabel *m_userInfoLabel;            // 用户信息标签
     QLabel *m_balanceLabel;              // 余额标签
     QLabel *m_remainingKwhLabel;         // 剩余度数标签

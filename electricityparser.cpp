@@ -139,19 +139,29 @@ void ElectricityParser::onReplyFinished(QNetworkReply *reply)
         // 解析房间剩余电量（JSON）
         parseJson(response);
         
-        // 如果解析到剩余度数，记录度数变动
-        if (!m_remainingKwh.isEmpty() && !m_dormitory.isEmpty()) {
-            bool ok;
-            double kwh = m_remainingKwh.toDouble(&ok);
-            if (ok) {
-                DatabaseManager::instance().updateDormitoryKwh(m_dormitory, kwh, m_currentOperatorName, "queryelectricbill");
-            }
+        // 保存完整的查询结果（学生账号、剩余电费、剩余度数、宿舍号）
+        if (!m_dormitory.isEmpty()) {
+            bool kwhOk, amountOk;
+            double kwh = m_remainingKwh.isEmpty() ? 0.0 : m_remainingKwh.toDouble(&kwhOk);
+            double amount = m_remainingAmount.isEmpty() ? 0.0 : m_remainingAmount.toDouble(&amountOk);
+            
+            if (!kwhOk) kwh = 0.0;
+            if (!amountOk) amount = 0.0;
+            
+            DatabaseManager::instance().saveElectricityQueryResult(
+                m_studentAccount, 
+                m_dormitory, 
+                kwh, 
+                amount, 
+                m_currentOperatorName, 
+                "queryelectricbill"
+            );
         }
         
         m_isFinished = true;
         reply->deleteLater();
         
-        qDebug() << "All data fetched - Kwh:" << m_remainingKwh << "Amount:" << m_remainingAmount << "Dorm:" << m_dormitory;
+        qDebug() << "All data fetched - StudentAccount:" << m_studentAccount << "Kwh:" << m_remainingKwh << "Amount:" << m_remainingAmount << "Dorm:" << m_dormitory;
         emit dataReady();
         return;
     }

@@ -215,6 +215,28 @@ void StudentPanel::setCurrentUser(const UserInfo& user)
     loadElectricityKwhChangeRecords();
     updateBalanceChart();
     updateKwhChart();
+    
+    checkLowKwhWarning();
+}
+
+void StudentPanel::checkLowKwhWarning()
+{
+    if (m_currentUser.dormitory.isEmpty()) {
+        return;
+    }
+    
+    DormitoryInfo dorm = DatabaseManager::instance().getDormitoryByNumber(m_currentUser.dormitory);
+    
+    if (dorm.id != -1 && dorm.remainingKwh < 3.0) {
+        QMessageBox::warning(this, "电费预警", 
+            QString("警告：您的宿舍(%1)剩余度数不足3度！\n当前剩余: %2 度\n\n请及时充值，避免断电！")
+            .arg(m_currentUser.dormitory)
+            .arg(dorm.remainingKwh, 0, 'f', 2));
+        
+        if (m_remainingKwhLabel) {
+            m_remainingKwhLabel->setStyleSheet("font-size: 14px; padding: 10px; color: #e74c3c; background-color: #ffebee; border: 2px solid #e74c3c; border-radius: 4px;");
+        }
+    }
 }
 
 void StudentPanel::loadUserInfo()

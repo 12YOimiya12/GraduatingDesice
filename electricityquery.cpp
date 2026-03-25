@@ -1,6 +1,102 @@
 #include "electricityquery.h"
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QVBoxLayout>
+#include <QDialogButtonBox>
+
+#ifdef Q_OS_WIN
+#include <QAxObject>
+#include <ActiveQt/QAxBase>
+#endif
+
+LoginBrowserDialog::LoginBrowserDialog(QWidget *parent)
+    : QDialog(parent)
+#ifdef Q_OS_WIN
+    , m_webBrowser(nullptr)
+#endif
+    , m_doneBtn(nullptr)
+    , m_statusLabel(nullptr)
+{
+    setWindowTitle("登录一卡通平台");
+    resize(900, 700);
+    
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    
+    m_statusLabel = new QLabel("请在下方浏览器中完成登录，登录成功后点击\"登录完成\"按钮");
+    m_statusLabel->setStyleSheet("padding: 10px; background-color: #b8c2c9ff; color: #1565c0; border-radius: 5px;");
+    layout->addWidget(m_statusLabel);
+    
+#ifdef Q_OS_WIN
+    m_webBrowser = new QAxWidget(this);
+    m_webBrowser->setControl("{8856F961-340A-11D0-A96B-00C04FD705A2}");
+    m_webBrowser->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    
+    m_webBrowser->setProperty("Silent", true);
+    
+    layout->addWidget(m_webBrowser);
+    
+    QString loginUrl = "https://ykt.jcu.edu.cn/epay/electric/load4electricbill?elcsysid=1";
+    m_webBrowser->dynamicCall("Navigate(const QString&)", loginUrl);
+#else
+    QLabel *noSupportLabel = new QLabel("此功能仅支持Windows系统\n\n请手动在浏览器中登录并复制Cookie");
+    noSupportLabel->setAlignment(Qt::AlignCenter);
+    noSupportLabel->setStyleSheet("font-size: 16px; color: #666; padding: 50px;");
+    layout->addWidget(noSupportLabel);
+#endif
+    
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    
+    m_doneBtn = new QPushButton("登录完成");
+    m_doneBtn->setStyleSheet("padding: 12px 30px; background-color: #4caf50; color: white; border: none; border-radius: 5px; font-weight: bold;");
+    connect(m_doneBtn, &QPushButton::clicked, this, &LoginBrowserDialog::onLoginComplete);
+    btnLayout->addStretch();
+    btnLayout->addWidget(m_doneBtn);
+    
+    QPushButton *cancelBtn = new QPushButton("取消");
+    cancelBtn->setStyleSheet("padding: 12px 30px; background-color: #9e9e9e; color: white; border: none; border-radius: 5px;");
+    connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
+    btnLayout->addWidget(cancelBtn);
+    btnLayout->addStretch();
+    
+    layout->addLayout(btnLayout);
+}
+
+LoginBrowserDialog::~LoginBrowserDialog()
+{
+}
+
+void LoginBrowserDialog::onLoginComplete()
+{
+#ifdef Q_OS_WIN
+    if (m_webBrowser) {
+        QVariant result = m_webBrowser->dynamicCall("Document()");
+        if (result.isValid()) {
+            QAxObject *doc = m_webBrowser->querySubObject("Document()");
+            if (doc) {
+                m_cookies = doc->property("cookie").toString();
+                delete doc;
+            }
+        }
+        
+        if (m_cookies.isEmpty()) {
+            m_cookies = m_webBrowser->dynamicCall("GetCookie()").toString();
+        }
+    }
+#endif
+    
+    if (m_cookies.isEmpty()) {
+        QMessageBox::information(this, "提示", 
+            "未能自动获取Cookie，请手动复制。\n\n"
+            "获取方法：\n"
+            "1. 在此浏览器中按F12打开开发者工具\n"
+            "2. 切换到Network（网络）标签\n"
+            "3. 刷新页面或点击任意链接\n"
+            "4. 选择一个请求，在Headers中找到Cookie\n"
+            "5. 复制Cookie值到主界面");
+    }
+    
+    accept();
+}
 
 ElectricityQuery::ElectricityQuery(QWidget *parent)
     : QMainWindow(parent)
@@ -36,7 +132,7 @@ ElectricityQuery::~ElectricityQuery()
 void ElectricityQuery::initUI()
 {
     setWindowTitle("惠电 - 网页电费查询");
-    resize(800, 900);
+    resize(800, 700);
 
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -50,17 +146,15 @@ void ElectricityQuery::initUI()
     titleLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(titleLabel);
 
-    m_statusLabel = new QLabel("准备就绪，点击下方按钮获取电费数据");
+    m_statusLabel = new QLabel("准备就绪，点击\"打开登录页面\"按钮开始查询");
     m_statusLabel->setStyleSheet("padding: 10px; background-color: #ecf0f1; border-radius: 5px; text-align: center;");
     m_statusLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(m_statusLabel);
 
-    // 初始化URL编辑框（用于内部使用，不再显示在界面上）
     m_urlEdit = new QLineEdit("https://ykt.jcu.edu.cn/epay/electric/queryelectricbill");
     m_urlEdit->setVisible(false);
     mainLayout->addWidget(m_urlEdit);
 
-    // 房间号输入框
     QGroupBox *roomGroup = new QGroupBox("查询房间");
     QFormLayout *roomLayout = new QFormLayout(roomGroup);
     
@@ -71,26 +165,20 @@ void ElectricityQuery::initUI()
     
     mainLayout->addWidget(roomGroup);
 
-    // Cookie输入框
-    QGroupBox *cookieGroup = new QGroupBox("登录Cookie（必填）");
+    QGroupBox *cookieGroup = new QGroupBox("登录Cookie");
     QVBoxLayout *cookieLayout = new QVBoxLayout(cookieGroup);
     
-    QLabel *cookieHint = new QLabel("请先在浏览器中登录一卡通平台，然后复制Cookie：");
+    QLabel *cookieHint = new QLabel("点击\"打开登录页面\"按钮，登录后Cookie将自动获取");
     cookieHint->setStyleSheet("color: #666; font-size: 12px;");
     cookieLayout->addWidget(cookieHint);
     
     m_cookieEdit = new QLineEdit();
-    m_cookieEdit->setPlaceholderText("例如: JSESSIONID=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+    m_cookieEdit->setPlaceholderText("自动获取或手动输入Cookie");
     m_cookieEdit->setStyleSheet("padding: 8px;");
     cookieLayout->addWidget(m_cookieEdit);
     
-    QLabel *cookieHowTo = new QLabel("获取方法：按F12打开开发者工具 → Network → 找到任意请求 → Headers → Cookie");
-    cookieHowTo->setStyleSheet("color: #999; font-size: 11px;");
-    cookieLayout->addWidget(cookieHowTo);
-    
     mainLayout->addWidget(cookieGroup);
 
-    // 初始化查询信息编辑框（用于内部使用，不再显示在界面上）
     m_campusEdit = new QLineEdit();
     m_campusEdit->setVisible(false);
     mainLayout->addWidget(m_campusEdit);
@@ -113,8 +201,8 @@ void ElectricityQuery::initUI()
 
     QHBoxLayout *btnLayout = new QHBoxLayout();
     
-    m_openBrowserBtn = new QPushButton("在浏览器中打开");
-    m_openBrowserBtn->setStyleSheet("padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 5px;");
+    m_openBrowserBtn = new QPushButton("打开登录页面");
+    m_openBrowserBtn->setStyleSheet("padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 5px; font-weight: bold;");
     connect(m_openBrowserBtn, &QPushButton::clicked, this, &ElectricityQuery::onOpenBrowserClicked);
     btnLayout->addWidget(m_openBrowserBtn);
 
@@ -161,38 +249,36 @@ void ElectricityQuery::initUI()
 
 void ElectricityQuery::onOpenBrowserClicked()
 {
-    QString url = m_urlEdit->text().trimmed();
-    if (url.isEmpty()) {
-        url = "https://ykt.jcu.edu.cn/epay/electric/load4electricbill?elcsysid=1";
-    }
+    LoginBrowserDialog dialog(this);
     
-    bool success = QDesktopServices::openUrl(QUrl(url));
-    
-    if (success) {
-        m_statusLabel->setText("已在浏览器中打开，请在浏览器中完成登录等操作");
-        m_statusLabel->setStyleSheet("padding: 10px; background-color: #d4edda; color: #155724; border-radius: 5px; text-align: center;");
-    } else {
-        QMessageBox::warning(this, "提示", "无法打开浏览器，请手动访问网址");
+    if (dialog.exec() == QDialog::Accepted) {
+        QString cookies = dialog.getCookies();
+        
+        if (!cookies.isEmpty()) {
+            m_cookieEdit->setText(cookies);
+            m_statusLabel->setText("已自动获取Cookie，请输入房间号后点击\"获取电费数据\"");
+            m_statusLabel->setStyleSheet("padding: 10px; background-color: #d4edda; color: #155724; border-radius: 5px; text-align: center;");
+        } else {
+            m_statusLabel->setText("未能自动获取Cookie，请手动输入或重试");
+            m_statusLabel->setStyleSheet("padding: 10px; background-color: #fff3cd; color: #856404; border-radius: 5px; text-align: center;");
+        }
     }
 }
 
 void ElectricityQuery::onFetchDataClicked()
 {
-    // 获取房间号
     QString roomNo = m_roomNoEdit->text().trimmed();
     if (roomNo.isEmpty()) {
         QMessageBox::warning(this, "提示", "请输入房间号！");
         return;
     }
     
-    // 获取Cookie
     QString cookie = m_cookieEdit->text().trimmed();
     if (cookie.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请输入登录Cookie！\n\n获取方法：\n1. 在浏览器中登录一卡通平台\n2. 按F12打开开发者工具\n3. 切换到Network标签\n4. 刷新页面，找到任意请求\n5. 点击请求，在Headers中找到Cookie\n6. 复制Cookie值粘贴到上方输入框");
+        QMessageBox::warning(this, "提示", "请先点击\"打开登录页面\"获取Cookie！");
         return;
     }
     
-    // 获取当前登录用户信息
     QString operatorName = "匿名用户";
     
     m_statusLabel->setText("正在获取数据，请稍候...");
@@ -264,7 +350,7 @@ void ElectricityQuery::displayResults()
     }
     
     if (kwh.isEmpty()) {
-        QMessageBox::information(this, "提示", "未能获取到数据。\n\n可能原因：\n1. 网页需要先登录\n2. 网络连接问题\n3. 网址不正确\n\n建议：先点击'在浏览器中打开'完成登录，再尝试获取数据。");
+        QMessageBox::information(this, "提示", "未能获取到数据。\n\n可能原因：\n1. 网页需要先登录\n2. 网络连接问题\n3. 网址不正确\n\n建议：先点击'打开登录页面'完成登录，再尝试获取数据。");
     }
 }
 
