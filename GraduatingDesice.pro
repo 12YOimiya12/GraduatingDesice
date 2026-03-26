@@ -1,4 +1,4 @@
-QT       += core gui sql network charts axcontainer
+QT       += core gui sql network charts axcontainer multimediawidgets multimedia
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17

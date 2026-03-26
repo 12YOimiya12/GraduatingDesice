@@ -144,6 +144,9 @@ private:
     void loadPendingRepairRequests();
     void loadPendingRoomChangeRequests();
     void loadAllAppliances();
+    void showFaceAuditDialog(int faceId);
+    void showRepairHandleDialog(int requestId);
+    void showRoomChangeDialog(int requestId);
     
     QLabel *m_userInfoLabel;
     QTableWidget *m_studentsTable;

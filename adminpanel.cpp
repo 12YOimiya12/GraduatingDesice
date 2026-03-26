@@ -23,6 +23,8 @@
 #include <QFile>
 #include <QTextStream>
 #include <QSpinBox>
+#include <QTextEdit>
+#include <QPixmap>
 
 AdminPanel::AdminPanel(QWidget *parent)
     : QMainWindow(parent)
@@ -1010,6 +1012,10 @@ QWidget* AdminPanel::initFaceAuditTab()
     title->setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;");
     layout->addWidget(title);
     
+    QLabel *tipLabel = new QLabel("提示：双击表格行可查看详情并进行审核处理");
+    tipLabel->setStyleSheet("font-size: 12px; color: #666; padding: 5px;");
+    layout->addWidget(tipLabel);
+    
     QHBoxLayout *btnLayout = new QHBoxLayout();
     
     QPushButton *refreshBtn = new QPushButton("刷新");
@@ -1021,16 +1027,132 @@ QWidget* AdminPanel::initFaceAuditTab()
     layout->addLayout(btnLayout);
     
     m_faceAuditTable = new QTableWidget();
-    m_faceAuditTable->setColumnCount(8);
-    m_faceAuditTable->setHorizontalHeaderLabels({"ID", "学号", "姓名", "宿舍", "提交时间", "状态", "操作", "拒绝原因"});
+    m_faceAuditTable->setColumnCount(7);
+    m_faceAuditTable->setHorizontalHeaderLabels({"ID", "学号", "姓名", "宿舍", "提交时间", "状态", "拒绝原因"});
     m_faceAuditTable->horizontalHeader()->setStretchLastSection(true);
     m_faceAuditTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_faceAuditTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_faceAuditTable->setAlternatingRowColors(true);
+    connect(m_faceAuditTable, &QTableWidget::cellDoubleClicked, this, [this](int row, int column) {
+        Q_UNUSED(column);
+        QTableWidgetItem *idItem = m_faceAuditTable->item(row, 0);
+        if (idItem) {
+            int faceId = idItem->text().toInt();
+            showFaceAuditDialog(faceId);
+        }
+    });
     layout->addWidget(m_faceAuditTable);
     
     loadPendingFaceInfos();
     
     return tab;
+}
+
+void AdminPanel::showFaceAuditDialog(int faceId)
+{
+    FaceInfo info = DatabaseManager::instance().getFaceInfoById(faceId);
+    if (info.id == -1) return;
+    
+    QDialog dialog(this);
+    dialog.setWindowTitle("人脸信息审核");
+    dialog.setMinimumSize(500, 400);
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    
+    QHBoxLayout *infoLayout = new QHBoxLayout();
+    
+    QLabel *imageLabel = new QLabel();
+    imageLabel->setFixedSize(200, 200);
+    imageLabel->setStyleSheet("border: 1px solid #ccc; background-color: #f5f5f5;");
+    imageLabel->setAlignment(Qt::AlignCenter);
+    if (!info.faceImagePath.isEmpty()) {
+        QPixmap pixmap(info.faceImagePath);
+        if (!pixmap.isNull()) {
+            imageLabel->setPixmap(pixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        } else {
+            imageLabel->setText("无法加载图片");
+        }
+    } else {
+        imageLabel->setText("暂无照片");
+    }
+    infoLayout->addWidget(imageLabel);
+    
+    QFormLayout *formLayout = new QFormLayout();
+    formLayout->addRow("学号:", new QLabel(info.studentId));
+    formLayout->addRow("姓名:", new QLabel(info.name));
+    formLayout->addRow("宿舍:", new QLabel(info.dormitory));
+    formLayout->addRow("提交时间:", new QLabel(info.submitTime.toString("yyyy-MM-dd hh:mm:ss")));
+    
+    QString statusText;
+    switch (info.status) {
+        case 0: statusText = "待审核"; break;
+        case 1: statusText = "已通过"; break;
+        case 2: statusText = "已拒绝"; break;
+    }
+    QLabel *statusLabel = new QLabel(statusText);
+    if (info.status == 0) statusLabel->setStyleSheet("color: #f39c12; font-weight: bold;");
+    else if (info.status == 1) statusLabel->setStyleSheet("color: #27ae60; font-weight: bold;");
+    else statusLabel->setStyleSheet("color: #e74c3c; font-weight: bold;");
+    formLayout->addRow("状态:", statusLabel);
+    
+    if (!info.rejectReason.isEmpty()) {
+        formLayout->addRow("拒绝原因:", new QLabel(info.rejectReason));
+    }
+    if (!info.auditorName.isEmpty()) {
+        formLayout->addRow("审核人:", new QLabel(info.auditorName));
+    }
+    if (info.auditTime.isValid()) {
+        formLayout->addRow("审核时间:", new QLabel(info.auditTime.toString("yyyy-MM-dd hh:mm:ss")));
+    }
+    
+    infoLayout->addLayout(formLayout);
+    layout->addLayout(infoLayout);
+    
+    if (info.status == 0) {
+        QLineEdit *reasonEdit = new QLineEdit();
+        reasonEdit->setPlaceholderText("如拒绝请输入原因");
+        layout->addWidget(reasonEdit);
+        
+        QDialogButtonBox *buttonBox = new QDialogButtonBox();
+        QPushButton *approveBtn = buttonBox->addButton("通过审核", QDialogButtonBox::AcceptRole);
+        approveBtn->setStyleSheet("padding: 10px 30px; background-color: #27ae60; color: white; border: none; border-radius: 4px;");
+        
+        QPushButton *rejectBtn = buttonBox->addButton("拒绝", QDialogButtonBox::RejectRole);
+        rejectBtn->setStyleSheet("padding: 10px 30px; background-color: #e74c3c; color: white; border: none; border-radius: 4px;");
+        
+        QPushButton *cancelBtn = buttonBox->addButton("取消", QDialogButtonBox::RejectRole);
+        cancelBtn->setStyleSheet("padding: 10px 30px; background-color: #95a5a6; color: white; border: none; border-radius: 4px;");
+        
+        layout->addWidget(buttonBox);
+        
+        connect(approveBtn, &QPushButton::clicked, this, [&]() {
+            if (DatabaseManager::instance().auditFaceInfo(faceId, 1, m_currentUser.name)) {
+                QMessageBox::information(&dialog, "成功", "人脸信息已通过审核！");
+                dialog.accept();
+                loadPendingFaceInfos();
+            }
+        });
+        
+        connect(rejectBtn, &QPushButton::clicked, this, [&]() {
+            QString reason = reasonEdit->text().trimmed();
+            if (reason.isEmpty()) {
+                QMessageBox::warning(&dialog, "提示", "请输入拒绝原因！");
+                return;
+            }
+            if (DatabaseManager::instance().auditFaceInfo(faceId, 2, m_currentUser.name, reason)) {
+                QMessageBox::information(&dialog, "成功", "人脸信息已拒绝！");
+                dialog.accept();
+                loadPendingFaceInfos();
+            }
+        });
+        
+        connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+    } else {
+        QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+        layout->addWidget(buttonBox);
+        connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    }
+    
+    dialog.exec();
 }
 
 void AdminPanel::loadPendingFaceInfos()
@@ -1054,43 +1176,7 @@ void AdminPanel::loadPendingFaceInfos()
             case 2: statusText = "已拒绝"; break;
         }
         m_faceAuditTable->setItem(i, 5, new QTableWidgetItem(statusText));
-        
-        QWidget *btnWidget = new QWidget();
-        QHBoxLayout *btnLayout = new QHBoxLayout(btnWidget);
-        btnLayout->setContentsMargins(4, 4, 4, 4);
-        
-        if (info.status == 0) {
-            QPushButton *approveBtn = new QPushButton("通过");
-            approveBtn->setStyleSheet("padding: 4px 8px; background-color: #27ae60; color: white; border: none; border-radius: 3px;");
-            approveBtn->setProperty("faceId", info.id);
-            connect(approveBtn, &QPushButton::clicked, this, [this, approveBtn]() {
-                int faceId = approveBtn->property("faceId").toInt();
-                if (DatabaseManager::instance().auditFaceInfo(faceId, 1, m_currentUser.name)) {
-                    loadPendingFaceInfos();
-                    QMessageBox::information(this, "成功", "人脸信息已通过审核！");
-                }
-            });
-            btnLayout->addWidget(approveBtn);
-            
-            QPushButton *rejectBtn = new QPushButton("拒绝");
-            rejectBtn->setStyleSheet("padding: 4px 8px; background-color: #e74c3c; color: white; border: none; border-radius: 3px;");
-            rejectBtn->setProperty("faceId", info.id);
-            connect(rejectBtn, &QPushButton::clicked, this, [this, rejectBtn]() {
-                int faceId = rejectBtn->property("faceId").toInt();
-                bool ok;
-                QString reason = QInputDialog::getText(this, "拒绝原因", "请输入拒绝原因:", QLineEdit::Normal, "", &ok);
-                if (ok) {
-                    if (DatabaseManager::instance().auditFaceInfo(faceId, 2, m_currentUser.name, reason)) {
-                        loadPendingFaceInfos();
-                        QMessageBox::information(this, "成功", "人脸信息已拒绝！");
-                    }
-                }
-            });
-            btnLayout->addWidget(rejectBtn);
-        }
-        
-        m_faceAuditTable->setCellWidget(i, 6, btnWidget);
-        m_faceAuditTable->setItem(i, 7, new QTableWidgetItem(info.rejectReason));
+        m_faceAuditTable->setItem(i, 6, new QTableWidgetItem(info.rejectReason));
     }
 }
 
@@ -1108,6 +1194,10 @@ QWidget* AdminPanel::initRepairHandleTab()
     title->setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;");
     layout->addWidget(title);
     
+    QLabel *tipLabel = new QLabel("提示：双击表格行可查看详情并进行处理");
+    tipLabel->setStyleSheet("font-size: 12px; color: #666; padding: 5px;");
+    layout->addWidget(tipLabel);
+    
     QHBoxLayout *btnLayout = new QHBoxLayout();
     
     QPushButton *refreshBtn = new QPushButton("刷新");
@@ -1119,16 +1209,157 @@ QWidget* AdminPanel::initRepairHandleTab()
     layout->addLayout(btnLayout);
     
     m_repairHandleTable = new QTableWidget();
-    m_repairHandleTable->setColumnCount(9);
-    m_repairHandleTable->setHorizontalHeaderLabels({"ID", "宿舍", "姓名", "维修类型", "问题描述", "优先级", "状态", "操作", "处理结果"});
+    m_repairHandleTable->setColumnCount(8);
+    m_repairHandleTable->setHorizontalHeaderLabels({"ID", "宿舍", "姓名", "维修类型", "问题描述", "优先级", "状态", "处理结果"});
     m_repairHandleTable->horizontalHeader()->setStretchLastSection(true);
     m_repairHandleTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_repairHandleTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_repairHandleTable->setAlternatingRowColors(true);
+    connect(m_repairHandleTable, &QTableWidget::cellDoubleClicked, this, [this](int row, int column) {
+        Q_UNUSED(column);
+        QTableWidgetItem *idItem = m_repairHandleTable->item(row, 0);
+        if (idItem) {
+            int requestId = idItem->text().toInt();
+            showRepairHandleDialog(requestId);
+        }
+    });
     layout->addWidget(m_repairHandleTable);
     
     loadPendingRepairRequests();
     
     return tab;
+}
+
+void AdminPanel::showRepairHandleDialog(int requestId)
+{
+    RepairRequest req = DatabaseManager::instance().getRepairRequestById(requestId);
+    if (req.id == -1) return;
+    
+    QDialog dialog(this);
+    dialog.setWindowTitle("维修申请处理");
+    dialog.setMinimumSize(500, 450);
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    
+    QFormLayout *formLayout = new QFormLayout();
+    formLayout->addRow("申请ID:", new QLabel(QString::number(req.id)));
+    formLayout->addRow("宿舍:", new QLabel(req.dormitory));
+    formLayout->addRow("申请人:", new QLabel(req.name));
+    formLayout->addRow("学号:", new QLabel(req.studentId));
+    formLayout->addRow("联系电话:", new QLabel(req.contactPhone));
+    formLayout->addRow("维修类型:", new QLabel(req.repairTypeText));
+    
+    QString priorityText;
+    switch (req.priority) {
+        case 0: priorityText = "普通"; break;
+        case 1: priorityText = "紧急"; break;
+        case 2: priorityText = "非常紧急"; break;
+    }
+    QLabel *priorityLabel = new QLabel(priorityText);
+    if (req.priority == 2) priorityLabel->setStyleSheet("color: #e74c3c; font-weight: bold;");
+    else if (req.priority == 1) priorityLabel->setStyleSheet("color: #f39c12; font-weight: bold;");
+    formLayout->addRow("优先级:", priorityLabel);
+    
+    QTextEdit *descEdit = new QTextEdit();
+    descEdit->setPlainText(req.description);
+    descEdit->setReadOnly(true);
+    descEdit->setMaximumHeight(80);
+    formLayout->addRow("问题描述:", descEdit);
+    
+    formLayout->addRow("提交时间:", new QLabel(req.submitTime.toString("yyyy-MM-dd hh:mm:ss")));
+    
+    QString statusText;
+    switch (req.status) {
+        case 0: statusText = "待处理"; break;
+        case 1: statusText = "处理中"; break;
+        case 2: statusText = "已完成"; break;
+        case 3: statusText = "已关闭"; break;
+    }
+    QLabel *statusLabel = new QLabel(statusText);
+    if (req.status == 0) statusLabel->setStyleSheet("color: #f39c12; font-weight: bold;");
+    else if (req.status == 1) statusLabel->setStyleSheet("color: #3498db; font-weight: bold;");
+    else if (req.status == 2) statusLabel->setStyleSheet("color: #27ae60; font-weight: bold;");
+    else statusLabel->setStyleSheet("color: #95a5a6; font-weight: bold;");
+    formLayout->addRow("状态:", statusLabel);
+    
+    if (!req.handlerName.isEmpty()) {
+        formLayout->addRow("处理人:", new QLabel(req.handlerName));
+    }
+    if (!req.handleResult.isEmpty()) {
+        formLayout->addRow("处理结果:", new QLabel(req.handleResult));
+    }
+    
+    layout->addLayout(formLayout);
+    
+    if (req.status < 2) {
+        QTextEdit *resultEdit = new QTextEdit();
+        resultEdit->setPlaceholderText("请输入处理结果...");
+        resultEdit->setMaximumHeight(60);
+        layout->addWidget(resultEdit);
+        
+        QDialogButtonBox *buttonBox = new QDialogButtonBox();
+        
+        QPushButton *startBtn = nullptr;
+        QPushButton *completeBtn = nullptr;
+        
+        if (req.status == 0) {
+            startBtn = buttonBox->addButton("开始处理", QDialogButtonBox::AcceptRole);
+            startBtn->setStyleSheet("padding: 10px 30px; background-color: #3498db; color: white; border: none; border-radius: 4px;");
+        } else {
+            completeBtn = buttonBox->addButton("完成处理", QDialogButtonBox::AcceptRole);
+            completeBtn->setStyleSheet("padding: 10px 30px; background-color: #27ae60; color: white; border: none; border-radius: 4px;");
+        }
+        
+        QPushButton *closeBtn = buttonBox->addButton("关闭申请", QDialogButtonBox::RejectRole);
+        closeBtn->setStyleSheet("padding: 10px 30px; background-color: #e74c3c; color: white; border: none; border-radius: 4px;");
+        
+        QPushButton *cancelBtn = buttonBox->addButton("取消", QDialogButtonBox::RejectRole);
+        cancelBtn->setStyleSheet("padding: 10px 30px; background-color: #95a5a6; color: white; border: none; border-radius: 4px;");
+        
+        layout->addWidget(buttonBox);
+        
+        if (startBtn) {
+            connect(startBtn, &QPushButton::clicked, this, [&]() {
+                if (DatabaseManager::instance().handleRepairRequest(requestId, 1, m_currentUser.name)) {
+                    QMessageBox::information(&dialog, "成功", "维修申请已开始处理！");
+                    dialog.accept();
+                    loadPendingRepairRequests();
+                }
+            });
+        }
+        
+        if (completeBtn) {
+            connect(completeBtn, &QPushButton::clicked, this, [&]() {
+                QString result = resultEdit->toPlainText().trimmed();
+                if (result.isEmpty()) {
+                    QMessageBox::warning(&dialog, "提示", "请输入处理结果！");
+                    return;
+                }
+                if (DatabaseManager::instance().handleRepairRequest(requestId, 2, m_currentUser.name, result)) {
+                    QMessageBox::information(&dialog, "成功", "维修已完成！");
+                    dialog.accept();
+                    loadPendingRepairRequests();
+                }
+            });
+        }
+        
+        connect(closeBtn, &QPushButton::clicked, this, [&]() {
+            if (QMessageBox::question(&dialog, "确认", "确定要关闭此维修申请吗？") == QMessageBox::Yes) {
+                if (DatabaseManager::instance().handleRepairRequest(requestId, 3, m_currentUser.name, "已关闭")) {
+                    QMessageBox::information(&dialog, "成功", "维修申请已关闭！");
+                    dialog.accept();
+                    loadPendingRepairRequests();
+                }
+            }
+        });
+        
+        connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+    } else {
+        QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+        layout->addWidget(buttonBox);
+        connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    }
+    
+    dialog.exec();
 }
 
 void AdminPanel::loadPendingRepairRequests()
@@ -1161,53 +1392,7 @@ void AdminPanel::loadPendingRepairRequests()
             case 3: statusText = "已关闭"; break;
         }
         m_repairHandleTable->setItem(i, 6, new QTableWidgetItem(statusText));
-        
-        QWidget *btnWidget = new QWidget();
-        QHBoxLayout *btnLayout = new QHBoxLayout(btnWidget);
-        btnLayout->setContentsMargins(4, 4, 4, 4);
-        
-        if (req.status < 2) {
-            QPushButton *handleBtn = new QPushButton(req.status == 0 ? "开始处理" : "完成");
-            handleBtn->setStyleSheet("padding: 4px 8px; background-color: #27ae60; color: white; border: none; border-radius: 3px;");
-            handleBtn->setProperty("requestId", req.id);
-            handleBtn->setProperty("currentStatus", req.status);
-            connect(handleBtn, &QPushButton::clicked, this, [this, handleBtn]() {
-                int requestId = handleBtn->property("requestId").toInt();
-                int currentStatus = handleBtn->property("currentStatus").toInt();
-                
-                if (currentStatus == 0) {
-                    if (DatabaseManager::instance().handleRepairRequest(requestId, 1, m_currentUser.name)) {
-                        loadPendingRepairRequests();
-                        QMessageBox::information(this, "成功", "维修申请已开始处理！");
-                    }
-                } else {
-                    bool ok;
-                    QString result = QInputDialog::getText(this, "处理结果", "请输入处理结果:", QLineEdit::Normal, "", &ok);
-                    if (ok) {
-                        if (DatabaseManager::instance().handleRepairRequest(requestId, 2, m_currentUser.name, result)) {
-                            loadPendingRepairRequests();
-                            QMessageBox::information(this, "成功", "维修已完成！");
-                        }
-                    }
-                }
-            });
-            btnLayout->addWidget(handleBtn);
-            
-            QPushButton *closeBtn = new QPushButton("关闭");
-            closeBtn->setStyleSheet("padding: 4px 8px; background-color: #e74c3c; color: white; border: none; border-radius: 3px;");
-            closeBtn->setProperty("requestId", req.id);
-            connect(closeBtn, &QPushButton::clicked, this, [this, closeBtn]() {
-                int requestId = closeBtn->property("requestId").toInt();
-                if (DatabaseManager::instance().handleRepairRequest(requestId, 3, m_currentUser.name, "已关闭")) {
-                    loadPendingRepairRequests();
-                    QMessageBox::information(this, "成功", "维修申请已关闭！");
-                }
-            });
-            btnLayout->addWidget(closeBtn);
-        }
-        
-        m_repairHandleTable->setCellWidget(i, 7, btnWidget);
-        m_repairHandleTable->setItem(i, 8, new QTableWidgetItem(req.handleResult));
+        m_repairHandleTable->setItem(i, 7, new QTableWidgetItem(req.handleResult));
     }
 }
 
@@ -1225,6 +1410,10 @@ QWidget* AdminPanel::initRoomChangeAuditTab()
     title->setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;");
     layout->addWidget(title);
     
+    QLabel *tipLabel = new QLabel("提示：双击表格行可查看详情并进行审核处理");
+    tipLabel->setStyleSheet("font-size: 12px; color: #666; padding: 5px;");
+    layout->addWidget(tipLabel);
+    
     QHBoxLayout *btnLayout = new QHBoxLayout();
     
     QPushButton *refreshBtn = new QPushButton("刷新");
@@ -1236,16 +1425,145 @@ QWidget* AdminPanel::initRoomChangeAuditTab()
     layout->addLayout(btnLayout);
     
     m_roomChangeAuditTable = new QTableWidget();
-    m_roomChangeAuditTable->setColumnCount(8);
-    m_roomChangeAuditTable->setHorizontalHeaderLabels({"ID", "学号", "姓名", "当前宿舍", "目标宿舍", "换寝原因", "状态", "操作"});
+    m_roomChangeAuditTable->setColumnCount(7);
+    m_roomChangeAuditTable->setHorizontalHeaderLabels({"ID", "学号", "姓名", "当前宿舍", "目标宿舍", "换寝原因", "状态"});
     m_roomChangeAuditTable->horizontalHeader()->setStretchLastSection(true);
     m_roomChangeAuditTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_roomChangeAuditTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_roomChangeAuditTable->setAlternatingRowColors(true);
+    connect(m_roomChangeAuditTable, &QTableWidget::cellDoubleClicked, this, [this](int row, int column) {
+        Q_UNUSED(column);
+        QTableWidgetItem *idItem = m_roomChangeAuditTable->item(row, 0);
+        if (idItem) {
+            int requestId = idItem->text().toInt();
+            showRoomChangeDialog(requestId);
+        }
+    });
     layout->addWidget(m_roomChangeAuditTable);
     
     loadPendingRoomChangeRequests();
     
     return tab;
+}
+
+void AdminPanel::showRoomChangeDialog(int requestId)
+{
+    RoomChangeRequest req = DatabaseManager::instance().getRoomChangeRequestById(requestId);
+    if (req.id == -1) return;
+    
+    QDialog dialog(this);
+    dialog.setWindowTitle("换寝申请审核");
+    dialog.setMinimumSize(500, 400);
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    
+    QFormLayout *formLayout = new QFormLayout();
+    formLayout->addRow("申请ID:", new QLabel(QString::number(req.id)));
+    formLayout->addRow("学号:", new QLabel(req.studentId));
+    formLayout->addRow("姓名:", new QLabel(req.name));
+    formLayout->addRow("当前宿舍:", new QLabel(req.currentDormitory));
+    formLayout->addRow("目标宿舍:", new QLabel(req.targetDormitory));
+    formLayout->addRow("换寝原因:", new QLabel(req.changeReasonText));
+    
+    QTextEdit *reasonEdit = new QTextEdit();
+    reasonEdit->setPlainText(req.description);
+    reasonEdit->setReadOnly(true);
+    reasonEdit->setMaximumHeight(80);
+    formLayout->addRow("详细说明:", reasonEdit);
+    
+    formLayout->addRow("提交时间:", new QLabel(req.submitTime.toString("yyyy-MM-dd hh:mm:ss")));
+    
+    QString statusText;
+    switch (req.status) {
+        case 0: statusText = "待审核"; break;
+        case 1: statusText = "已通过"; break;
+        case 2: statusText = "已拒绝"; break;
+        case 3: statusText = "已完成"; break;
+    }
+    QLabel *statusLabel = new QLabel(statusText);
+    if (req.status == 0) statusLabel->setStyleSheet("color: #f39c12; font-weight: bold;");
+    else if (req.status == 1) statusLabel->setStyleSheet("color: #3498db; font-weight: bold;");
+    else if (req.status == 2) statusLabel->setStyleSheet("color: #e74c3c; font-weight: bold;");
+    else statusLabel->setStyleSheet("color: #27ae60; font-weight: bold;");
+    formLayout->addRow("状态:", statusLabel);
+    
+    if (!req.auditorName.isEmpty()) {
+        formLayout->addRow("审核人:", new QLabel(req.auditorName));
+    }
+    if (!req.rejectReason.isEmpty()) {
+        formLayout->addRow("拒绝原因:", new QLabel(req.rejectReason));
+    }
+    
+    layout->addLayout(formLayout);
+    
+    if (req.status == 0) {
+        QLineEdit *rejectReasonEdit = new QLineEdit();
+        rejectReasonEdit->setPlaceholderText("如拒绝请输入原因");
+        layout->addWidget(rejectReasonEdit);
+        
+        QDialogButtonBox *buttonBox = new QDialogButtonBox();
+        
+        QPushButton *approveBtn = buttonBox->addButton("通过审核", QDialogButtonBox::AcceptRole);
+        approveBtn->setStyleSheet("padding: 10px 30px; background-color: #27ae60; color: white; border: none; border-radius: 4px;");
+        
+        QPushButton *rejectBtn = buttonBox->addButton("拒绝", QDialogButtonBox::RejectRole);
+        rejectBtn->setStyleSheet("padding: 10px 30px; background-color: #e74c3c; color: white; border: none; border-radius: 4px;");
+        
+        QPushButton *cancelBtn = buttonBox->addButton("取消", QDialogButtonBox::RejectRole);
+        cancelBtn->setStyleSheet("padding: 10px 30px; background-color: #95a5a6; color: white; border: none; border-radius: 4px;");
+        
+        layout->addWidget(buttonBox);
+        
+        connect(approveBtn, &QPushButton::clicked, this, [&]() {
+            if (DatabaseManager::instance().auditRoomChangeRequest(requestId, 1, m_currentUser.name)) {
+                QMessageBox::information(&dialog, "成功", "换寝申请已通过！");
+                dialog.accept();
+                loadPendingRoomChangeRequests();
+            }
+        });
+        
+        connect(rejectBtn, &QPushButton::clicked, this, [&]() {
+            QString reason = rejectReasonEdit->text().trimmed();
+            if (reason.isEmpty()) {
+                QMessageBox::warning(&dialog, "提示", "请输入拒绝原因！");
+                return;
+            }
+            if (DatabaseManager::instance().auditRoomChangeRequest(requestId, 2, m_currentUser.name, reason)) {
+                QMessageBox::information(&dialog, "成功", "换寝申请已拒绝！");
+                dialog.accept();
+                loadPendingRoomChangeRequests();
+            }
+        });
+        
+        connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+    } else if (req.status == 1) {
+        QDialogButtonBox *buttonBox = new QDialogButtonBox();
+        
+        QPushButton *completeBtn = buttonBox->addButton("完成换寝", QDialogButtonBox::AcceptRole);
+        completeBtn->setStyleSheet("padding: 10px 30px; background-color: #f39c12; color: white; border: none; border-radius: 4px;");
+        
+        QPushButton *closeBtn = buttonBox->addButton("关闭", QDialogButtonBox::RejectRole);
+        closeBtn->setStyleSheet("padding: 10px 30px; background-color: #95a5a6; color: white; border: none; border-radius: 4px;");
+        
+        layout->addWidget(buttonBox);
+        
+        connect(completeBtn, &QPushButton::clicked, this, [&]() {
+            if (DatabaseManager::instance().completeRoomChange(requestId)) {
+                QMessageBox::information(&dialog, "成功", "换寝已完成！学生宿舍信息已更新。");
+                dialog.accept();
+                loadPendingRoomChangeRequests();
+                loadStudents();
+                loadDormitories();
+            }
+        });
+        
+        connect(closeBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+    } else {
+        QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+        layout->addWidget(buttonBox);
+        connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    }
+    
+    dialog.exec();
 }
 
 void AdminPanel::loadPendingRoomChangeRequests()
@@ -1271,56 +1589,6 @@ void AdminPanel::loadPendingRoomChangeRequests()
             case 3: statusText = "已完成"; break;
         }
         m_roomChangeAuditTable->setItem(i, 6, new QTableWidgetItem(statusText));
-        
-        QWidget *btnWidget = new QWidget();
-        QHBoxLayout *btnLayout = new QHBoxLayout(btnWidget);
-        btnLayout->setContentsMargins(4, 4, 4, 4);
-        
-        if (req.status == 0) {
-            QPushButton *approveBtn = new QPushButton("通过");
-            approveBtn->setStyleSheet("padding: 4px 8px; background-color: #27ae60; color: white; border: none; border-radius: 3px;");
-            approveBtn->setProperty("requestId", req.id);
-            connect(approveBtn, &QPushButton::clicked, this, [this, approveBtn]() {
-                int requestId = approveBtn->property("requestId").toInt();
-                if (DatabaseManager::instance().auditRoomChangeRequest(requestId, 1, m_currentUser.name)) {
-                    loadPendingRoomChangeRequests();
-                    QMessageBox::information(this, "成功", "换寝申请已通过！");
-                }
-            });
-            btnLayout->addWidget(approveBtn);
-            
-            QPushButton *rejectBtn = new QPushButton("拒绝");
-            rejectBtn->setStyleSheet("padding: 4px 8px; background-color: #e74c3c; color: white; border: none; border-radius: 3px;");
-            rejectBtn->setProperty("requestId", req.id);
-            connect(rejectBtn, &QPushButton::clicked, this, [this, rejectBtn]() {
-                int requestId = rejectBtn->property("requestId").toInt();
-                bool ok;
-                QString reason = QInputDialog::getText(this, "拒绝原因", "请输入拒绝原因:", QLineEdit::Normal, "", &ok);
-                if (ok) {
-                    if (DatabaseManager::instance().auditRoomChangeRequest(requestId, 2, m_currentUser.name, reason)) {
-                        loadPendingRoomChangeRequests();
-                        QMessageBox::information(this, "成功", "换寝申请已拒绝！");
-                    }
-                }
-            });
-            btnLayout->addWidget(rejectBtn);
-        } else if (req.status == 1) {
-            QPushButton *completeBtn = new QPushButton("完成换寝");
-            completeBtn->setStyleSheet("padding: 4px 8px; background-color: #f39c12; color: white; border: none; border-radius: 3px;");
-            completeBtn->setProperty("requestId", req.id);
-            connect(completeBtn, &QPushButton::clicked, this, [this, completeBtn]() {
-                int requestId = completeBtn->property("requestId").toInt();
-                if (DatabaseManager::instance().completeRoomChange(requestId)) {
-                    loadPendingRoomChangeRequests();
-                    loadStudents();
-                    loadDormitories();
-                    QMessageBox::information(this, "成功", "换寝已完成！");
-                }
-            });
-            btnLayout->addWidget(completeBtn);
-        }
-        
-        m_roomChangeAuditTable->setCellWidget(i, 7, btnWidget);
     }
 }
 

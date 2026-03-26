@@ -360,8 +360,10 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Charts.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGLWidgets.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6AxContainer.prl \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6MultimediaWidgets.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Widgets.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGL.prl \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Multimedia.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Gui.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Sql.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Network.prl \
@@ -660,8 +662,10 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Charts.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGLWidgets.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6AxContainer.prl:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6MultimediaWidgets.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Widgets.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGL.prl:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6Multimedia.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Gui.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Sql.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Network.prl:

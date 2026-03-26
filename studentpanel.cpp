@@ -21,6 +21,101 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QPixmap>
+#include <QMediaDevices>
+#include <QApplication>
+#include <QDir>
+
+CameraDialog::CameraDialog(QWidget *parent)
+    : QDialog(parent)
+    , m_camera(nullptr)
+    , m_captureSession(nullptr)
+    , m_videoWidget(nullptr)
+    , m_imageCapture(nullptr)
+    , m_imageReady(false)
+{
+    setWindowTitle("摄像头采集");
+    setMinimumSize(640, 480);
+    
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    
+    QHBoxLayout *contentLayout = new QHBoxLayout();
+    
+    m_videoWidget = new QVideoWidget();
+    m_videoWidget->setMinimumSize(320, 240);
+    m_videoWidget->setStyleSheet("background-color: black;");
+    contentLayout->addWidget(m_videoWidget);
+    
+    m_previewLabel = new QLabel();
+    m_previewLabel->setMinimumSize(320, 240);
+    m_previewLabel->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
+    m_previewLabel->setAlignment(Qt::AlignCenter);
+    m_previewLabel->setText("预览区域");
+    m_previewLabel->setScaledContents(true);
+    contentLayout->addWidget(m_previewLabel);
+    
+    mainLayout->addLayout(contentLayout);
+    
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    
+    m_captureBtn = new QPushButton("拍照");
+    m_captureBtn->setStyleSheet("padding: 10px 30px; background-color: #3498db; color: white; border: none; border-radius: 4px;");
+    connect(m_captureBtn, &QPushButton::clicked, this, &CameraDialog::onCaptureClicked);
+    btnLayout->addWidget(m_captureBtn);
+    
+    m_confirmBtn = new QPushButton("确认使用");
+    m_confirmBtn->setEnabled(false);
+    m_confirmBtn->setStyleSheet("padding: 10px 30px; background-color: #27ae60; color: white; border: none; border-radius: 4px;");
+    connect(m_confirmBtn, &QPushButton::clicked, this, &QDialog::accept);
+    btnLayout->addWidget(m_confirmBtn);
+    
+    QPushButton *cancelBtn = new QPushButton("取消");
+    cancelBtn->setStyleSheet("padding: 10px 30px; background-color: #e74c3c; color: white; border: none; border-radius: 4px;");
+    connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
+    btnLayout->addWidget(cancelBtn);
+    
+    mainLayout->addLayout(btnLayout);
+    
+    QList<QCameraDevice> cameras = QMediaDevices::videoInputs();
+    if (cameras.isEmpty()) {
+        QMessageBox::warning(this, "错误", "未检测到摄像头设备！");
+        return;
+    }
+    
+    m_camera = new QCamera(cameras.first(), this);
+    m_captureSession = new QMediaCaptureSession(this);
+    m_imageCapture = new QImageCapture(this);
+    
+    m_captureSession->setCamera(m_camera);
+    m_captureSession->setVideoOutput(m_videoWidget);
+    m_captureSession->setImageCapture(m_imageCapture);
+    
+    connect(m_imageCapture, &QImageCapture::imageCaptured, this, &CameraDialog::onImageCaptured);
+    
+    m_camera->start();
+}
+
+CameraDialog::~CameraDialog()
+{
+    if (m_camera) {
+        m_camera->stop();
+    }
+}
+
+void CameraDialog::onCaptureClicked()
+{
+    if (m_imageCapture && m_camera) {
+        m_imageCapture->capture();
+    }
+}
+
+void CameraDialog::onImageCaptured(int id, const QImage &preview)
+{
+    Q_UNUSED(id);
+    m_capturedImage = QPixmap::fromImage(preview);
+    m_previewLabel->setPixmap(m_capturedImage.scaled(m_previewLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_imageReady = true;
+    m_confirmBtn->setEnabled(true);
+}
 
 StudentPanel::StudentPanel(QWidget *parent)
     : QMainWindow(parent)
@@ -573,6 +668,44 @@ QWidget* StudentPanel::initFaceRegisterTab()
     layout->addLayout(infoLayout);
     
     QHBoxLayout *btnLayout = new QHBoxLayout();
+    
+    QPushButton *cameraBtn = new QPushButton("摄像头拍照");
+    cameraBtn->setStyleSheet("padding: 10px 20px; background-color: #9b59b6; color: white; border: none; border-radius: 4px;");
+    connect(cameraBtn, &QPushButton::clicked, this, [this]() {
+        CameraDialog dialog(this);
+        if (dialog.exec() == QDialog::Accepted) {
+            QPixmap capturedImage = dialog.getCapturedImage();
+            if (!capturedImage.isNull()) {
+                QString savePath = QApplication::applicationDirPath() + "/face_images";
+                QDir dir;
+                if (!dir.exists(savePath)) {
+                    dir.mkpath(savePath);
+                }
+                QString fileName = savePath + "/" + m_currentUser.studentId + "_" + QDateTime::currentDateTime().toString("yyyyMMddhhmmss") + ".jpg";
+                if (capturedImage.save(fileName)) {
+                    m_faceImageLabel->setPixmap(capturedImage.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    
+                    FaceInfo faceInfo;
+                    faceInfo.userId = m_currentUser.id;
+                    faceInfo.studentId = m_currentUser.studentId;
+                    faceInfo.name = m_currentUser.name;
+                    faceInfo.dormitory = m_currentUser.dormitory;
+                    faceInfo.faceImagePath = fileName;
+                    faceInfo.status = 0;
+                    faceInfo.submitTime = QDateTime::currentDateTime();
+                    
+                    if (DatabaseManager::instance().addFaceInfo(faceInfo)) {
+                        m_faceStatusLabel->setText("状态: 待审核");
+                        m_faceStatusLabel->setStyleSheet("font-size: 14px; padding: 10px; color: #f39c12;");
+                        QMessageBox::information(this, "成功", "人脸照片已提交，等待管理员审核！");
+                    } else {
+                        QMessageBox::warning(this, "失败", "人脸照片提交失败，请重试！");
+                    }
+                }
+            }
+        }
+    });
+    btnLayout->addWidget(cameraBtn);
     
     QPushButton *uploadBtn = new QPushButton("上传人脸照片");
     uploadBtn->setStyleSheet("padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px;");

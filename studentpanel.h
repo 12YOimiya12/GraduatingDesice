@@ -9,12 +9,43 @@
 #include <QChartView>
 #include <QLineSeries>
 #include <QChart>
+#include <QCamera>
+#include <QMediaCaptureSession>
+#include <QVideoWidget>
+#include <QImageCapture>
+#include <QDialog>
 #include "databasemanager.h"
 #include "electricityquery.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class StudentPanel; }
 QT_END_NAMESPACE
+
+class CameraDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit CameraDialog(QWidget *parent = nullptr);
+    ~CameraDialog();
+    
+    QPixmap getCapturedImage() const { return m_capturedImage; }
+
+private slots:
+    void onCaptureClicked();
+    void onImageCaptured(int id, const QImage &preview);
+
+private:
+    QCamera *m_camera;
+    QMediaCaptureSession *m_captureSession;
+    QVideoWidget *m_videoWidget;
+    QImageCapture *m_imageCapture;
+    QPixmap m_capturedImage;
+    QPushButton *m_captureBtn;
+    QPushButton *m_confirmBtn;
+    QLabel *m_previewLabel;
+    bool m_imageReady;
+};
 
 /**
  * @brief 学生端面板类
