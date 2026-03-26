@@ -1850,6 +1850,13 @@ RepairRequest DatabaseManager::getRepairRequestById(int requestId)
         request.dormitory = query.value("dormitory").toString();
         request.contactPhone = query.value("contact_phone").toString();
         request.repairType = query.value("repair_type").toInt();
+        switch (request.repairType) {
+            case 0: request.repairTypeText = "电路问题"; break;
+            case 1: request.repairTypeText = "水管问题"; break;
+            case 2: request.repairTypeText = "门窗问题"; break;
+            case 3: request.repairTypeText = "家具问题"; break;
+            default: request.repairTypeText = "其他"; break;
+        }
         request.description = query.value("description").toString();
         request.imagePath = query.value("image_path").toString();
         request.status = query.value("status").toInt();
@@ -1880,6 +1887,13 @@ QList<RepairRequest> DatabaseManager::getAllRepairRequests()
         request.dormitory = query.value("dormitory").toString();
         request.contactPhone = query.value("contact_phone").toString();
         request.repairType = query.value("repair_type").toInt();
+        switch (request.repairType) {
+            case 0: request.repairTypeText = "电路问题"; break;
+            case 1: request.repairTypeText = "水管问题"; break;
+            case 2: request.repairTypeText = "门窗问题"; break;
+            case 3: request.repairTypeText = "家具问题"; break;
+            default: request.repairTypeText = "其他"; break;
+        }
         request.description = query.value("description").toString();
         request.imagePath = query.value("image_path").toString();
         request.status = query.value("status").toInt();
@@ -1904,6 +1918,11 @@ QList<RepairRequest> DatabaseManager::getRepairRequestsByUser(int userId)
     query.prepare("SELECT * FROM repair_requests WHERE user_id=? ORDER BY submit_time DESC");
     query.addBindValue(userId);
     
+    if (!query.exec()) {
+        qDebug() << "Get repair requests by user error:" << query.lastError().text();
+        return list;
+    }
+    
     while (query.next()) {
         RepairRequest request;
         request.id = query.value("id").toInt();
@@ -1913,6 +1932,13 @@ QList<RepairRequest> DatabaseManager::getRepairRequestsByUser(int userId)
         request.dormitory = query.value("dormitory").toString();
         request.contactPhone = query.value("contact_phone").toString();
         request.repairType = query.value("repair_type").toInt();
+        switch (request.repairType) {
+            case 0: request.repairTypeText = "电路问题"; break;
+            case 1: request.repairTypeText = "水管问题"; break;
+            case 2: request.repairTypeText = "门窗问题"; break;
+            case 3: request.repairTypeText = "家具问题"; break;
+            default: request.repairTypeText = "其他"; break;
+        }
         request.description = query.value("description").toString();
         request.imagePath = query.value("image_path").toString();
         request.status = query.value("status").toInt();
@@ -1937,6 +1963,11 @@ QList<RepairRequest> DatabaseManager::getRepairRequestsByDormitory(const QString
     query.prepare("SELECT * FROM repair_requests WHERE dormitory=? ORDER BY submit_time DESC");
     query.addBindValue(dormitory);
     
+    if (!query.exec()) {
+        qDebug() << "Get repair requests by dormitory error:" << query.lastError().text();
+        return list;
+    }
+    
     while (query.next()) {
         RepairRequest request;
         request.id = query.value("id").toInt();
@@ -1946,6 +1977,13 @@ QList<RepairRequest> DatabaseManager::getRepairRequestsByDormitory(const QString
         request.dormitory = query.value("dormitory").toString();
         request.contactPhone = query.value("contact_phone").toString();
         request.repairType = query.value("repair_type").toInt();
+        switch (request.repairType) {
+            case 0: request.repairTypeText = "电路问题"; break;
+            case 1: request.repairTypeText = "水管问题"; break;
+            case 2: request.repairTypeText = "门窗问题"; break;
+            case 3: request.repairTypeText = "家具问题"; break;
+            default: request.repairTypeText = "其他"; break;
+        }
         request.description = query.value("description").toString();
         request.imagePath = query.value("image_path").toString();
         request.status = query.value("status").toInt();
@@ -1977,6 +2015,13 @@ QList<RepairRequest> DatabaseManager::getPendingRepairRequests()
         request.dormitory = query.value("dormitory").toString();
         request.contactPhone = query.value("contact_phone").toString();
         request.repairType = query.value("repair_type").toInt();
+        switch (request.repairType) {
+            case 0: request.repairTypeText = "电路问题"; break;
+            case 1: request.repairTypeText = "水管问题"; break;
+            case 2: request.repairTypeText = "门窗问题"; break;
+            case 3: request.repairTypeText = "家具问题"; break;
+            default: request.repairTypeText = "其他"; break;
+        }
         request.description = query.value("description").toString();
         request.imagePath = query.value("image_path").toString();
         request.status = query.value("status").toInt();
@@ -2158,6 +2203,11 @@ QList<RoomChangeRequest> DatabaseManager::getRoomChangeRequestsByUser(int userId
     QSqlQuery query;
     query.prepare("SELECT * FROM room_change_requests WHERE user_id=? ORDER BY submit_time DESC");
     query.addBindValue(userId);
+    
+    if (!query.exec()) {
+        qDebug() << "Get room change requests by user error:" << query.lastError().text();
+        return list;
+    }
     
     while (query.next()) {
         RoomChangeRequest request;
