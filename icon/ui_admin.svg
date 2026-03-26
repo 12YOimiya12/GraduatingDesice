@@ -11,7 +11,7 @@
   
   <!-- 顶部导航栏 -->
   <rect width="1200" height="60" fill="url(#adminHeaderGrad)"/>
-  <text x="30" y="38" fill="white" font-family="Microsoft YaHei" font-size="18" font-weight="bold">⚙️ 惠电宿舍电费管理系统 - 管理员端</text>
+  <text x="30" y="38" fill="white" font-family="Microsoft YaHei" font-size="18" font-weight="bold">⚙️ 惠电宿舍智能管理系统 - 管理员端</text>
   
   <!-- 用户信息区域 -->
   <rect x="950" y="10" width="230" height="40" rx="20" fill="rgba(255,255,255,0.2)"/>

@@ -48,11 +48,15 @@ static constexpr auto qt_meta_stringdata_CLASSStudentPanelENDCLASS = QtMocHelper
     "onRefreshClicked",
     "onTabChanged",
     "index",
-    "onWebQueryClicked"
+    "onWebQueryClicked",
+    "onFaceRegisterClicked",
+    "onRepairRequestClicked",
+    "onRoomChangeClicked",
+    "onApplianceControlClicked"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSStudentPanelENDCLASS_t {
-    uint offsetsAndSizes[18];
+    uint offsetsAndSizes[26];
     char stringdata0[13];
     char stringdata1[7];
     char stringdata2[1];
@@ -62,6 +66,10 @@ struct qt_meta_stringdata_CLASSStudentPanelENDCLASS_t {
     char stringdata6[13];
     char stringdata7[6];
     char stringdata8[18];
+    char stringdata9[22];
+    char stringdata10[23];
+    char stringdata11[20];
+    char stringdata12[26];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSStudentPanelENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -75,7 +83,11 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSStudentPanelENDCLASS_t qt_meta_
         QT_MOC_LITERAL(55, 16),  // "onRefreshClicked"
         QT_MOC_LITERAL(72, 12),  // "onTabChanged"
         QT_MOC_LITERAL(85, 5),  // "index"
-        QT_MOC_LITERAL(91, 17)   // "onWebQueryClicked"
+        QT_MOC_LITERAL(91, 17),  // "onWebQueryClicked"
+        QT_MOC_LITERAL(109, 21),  // "onFaceRegisterClicked"
+        QT_MOC_LITERAL(131, 22),  // "onRepairRequestClicked"
+        QT_MOC_LITERAL(154, 19),  // "onRoomChangeClicked"
+        QT_MOC_LITERAL(174, 25)   // "onApplianceControlClicked"
     },
     "StudentPanel",
     "logout",
@@ -85,7 +97,11 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSStudentPanelENDCLASS_t qt_meta_
     "onRefreshClicked",
     "onTabChanged",
     "index",
-    "onWebQueryClicked"
+    "onWebQueryClicked",
+    "onFaceRegisterClicked",
+    "onRepairRequestClicked",
+    "onRoomChangeClicked",
+    "onApplianceControlClicked"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -97,7 +113,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSStudentPanelENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-       6,   14, // methods
+      10,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -105,14 +121,18 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSStudentPanelENDCLASS[] = {
        1,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,   50,    2, 0x06,    1 /* Public */,
+       1,    0,   74,    2, 0x06,    1 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       3,    0,   51,    2, 0x08,    2 /* Private */,
-       4,    0,   52,    2, 0x08,    3 /* Private */,
-       5,    0,   53,    2, 0x08,    4 /* Private */,
-       6,    1,   54,    2, 0x08,    5 /* Private */,
-       8,    0,   57,    2, 0x08,    7 /* Private */,
+       3,    0,   75,    2, 0x08,    2 /* Private */,
+       4,    0,   76,    2, 0x08,    3 /* Private */,
+       5,    0,   77,    2, 0x08,    4 /* Private */,
+       6,    1,   78,    2, 0x08,    5 /* Private */,
+       8,    0,   81,    2, 0x08,    7 /* Private */,
+       9,    0,   82,    2, 0x08,    8 /* Private */,
+      10,    0,   83,    2, 0x08,    9 /* Private */,
+      11,    0,   84,    2, 0x08,   10 /* Private */,
+      12,    0,   85,    2, 0x08,   11 /* Private */,
 
  // signals: parameters
     QMetaType::Void,
@@ -122,6 +142,10 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSStudentPanelENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, QMetaType::Int,    7,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
     QMetaType::Void,
 
        0        // eod
@@ -148,6 +172,14 @@ Q_CONSTINIT const QMetaObject StudentPanel::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
         // method 'onWebQueryClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onFaceRegisterClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onRepairRequestClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onRoomChangeClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onApplianceControlClicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
     nullptr
@@ -165,6 +197,10 @@ void StudentPanel::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 3: _t->onRefreshClicked(); break;
         case 4: _t->onTabChanged((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
         case 5: _t->onWebQueryClicked(); break;
+        case 6: _t->onFaceRegisterClicked(); break;
+        case 7: _t->onRepairRequestClicked(); break;
+        case 8: _t->onRoomChangeClicked(); break;
+        case 9: _t->onApplianceControlClicked(); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -198,13 +234,13 @@ int StudentPanel::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 6)
+        if (_id < 10)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 6;
+        _id -= 10;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 6)
+        if (_id < 10)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 6;
+        _id -= 10;
     }
     return _id;
 }

@@ -28,7 +28,7 @@
   <text x="400" y="180" text-anchor="middle" fill="white" font-size="30">⚡</text>
   
   <!-- 标题 -->
-  <text x="400" y="240" text-anchor="middle" fill="#2c3e50" font-family="Microsoft YaHei" font-size="20" font-weight="bold">惠电宿舍电费管理系统</text>
+  <text x="400" y="240" text-anchor="middle" fill="#2c3e50" font-family="Microsoft YaHei" font-size="20" font-weight="bold">惠电宿舍智能管理系统</text>
   
   <!-- 用户名输入框 -->
   <rect x="280" y="270" width="240" height="45" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
@@ -43,5 +43,5 @@
   <text x="400" y="430" text-anchor="middle" fill="white" font-family="Microsoft YaHei" font-size="14" font-weight="bold">登 录</text>
   
   <!-- 版权信息 -->
-  <text x="400" y="580" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Microsoft YaHei" font-size="11">© 2024 惠电宿舍电费管理系统</text>
+  <text x="400" y="580" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Microsoft YaHei" font-size="11">© 2024 惠电宿舍智能管理系统</text>
 </svg>

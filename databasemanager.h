@@ -98,6 +98,81 @@ struct ElectricityQueryRecord {
     QString remark;             // 备注
 };
 
+// 人脸信息结构体
+struct FaceInfo {
+    int id;                     // 记录ID
+    int userId;                 // 用户ID
+    QString studentId;          // 学号
+    QString name;               // 姓名
+    QString dormitory;          // 宿舍号
+    QString faceImagePath;      // 人脸图片路径
+    QString faceFeatureData;    // 人脸特征数据（Base64编码）
+    int status;                 // 状态（0:待审核, 1:已通过, 2:已拒绝）
+    QString rejectReason;       // 拒绝原因
+    QDateTime submitTime;       // 提交时间
+    QDateTime auditTime;        // 审核时间
+    QString auditorName;        // 审核人
+    QString remark;             // 备注
+};
+
+// 维修申请结构体
+struct RepairRequest {
+    int id;                     // 申请ID
+    int userId;                 // 用户ID
+    QString studentId;          // 学号
+    QString name;               // 姓名
+    QString dormitory;          // 宿舍号
+    QString contactPhone;       // 联系电话
+    int repairType;             // 维修类型（0:电路, 1:水管, 2:门窗, 3:家具, 4:其他）
+    QString repairTypeText;     // 维修类型文本
+    QString description;        // 问题描述
+    QString imagePath;          // 图片路径
+    int status;                 // 状态（0:待处理, 1:处理中, 2:已完成, 3:已关闭）
+    int priority;               // 优先级（0:普通, 1:紧急, 2:非常紧急）
+    QString handlerName;        // 处理人
+    QString handleResult;       // 处理结果
+    QDateTime submitTime;       // 提交时间
+    QDateTime handleTime;       // 处理时间
+    QDateTime completeTime;     // 完成时间
+    QString remark;             // 备注
+};
+
+// 换寝申请结构体
+struct RoomChangeRequest {
+    int id;                     // 申请ID
+    int userId;                 // 用户ID
+    QString studentId;          // 学号
+    QString name;               // 姓名
+    QString currentDormitory;   // 当前宿舍
+    QString targetDormitory;    // 目标宿舍
+    int changeReason;           // 换寝原因（0:室友矛盾, 1:身体原因, 2:学业需要, 3:其他）
+    QString changeReasonText;   // 换寝原因文本
+    QString description;        // 详细说明
+    int status;                 // 状态（0:待审核, 1:已通过, 2:已拒绝, 3:已完成）
+    QString rejectReason;       // 拒绝原因
+    QString auditorName;        // 审核人
+    QDateTime submitTime;       // 提交时间
+    QDateTime auditTime;        // 审核时间
+    QDateTime completeTime;     // 完成时间
+    QString remark;             // 备注
+};
+
+// 电器控制结构体
+struct ApplianceControl {
+    int id;                     // 控制器ID
+    QString dormitory;          // 宿舍号
+    QString applianceName;      // 电器名称
+    QString applianceType;      // 电器类型（空调、热水器、照明等）
+    int status;                 // 状态（0:关闭, 1:开启）
+    int powerLevel;             // 功率档位（0-100）
+    double currentPower;        // 当前功率（瓦）
+    double dailyUsage;          // 日用电量（度）
+    QString schedule;           // 定时任务（JSON格式）
+    bool isOnline;              // 是否在线
+    QDateTime lastUpdate;       // 最后更新时间
+    QString remark;             // 备注
+};
+
 /**
  * @brief 数据库管理类 - 单例模式
  * 
@@ -183,6 +258,48 @@ public:
     bool saveElectricityQueryResult(const QString& studentAccount, const QString& dormitory, 
                                     double remainingKwh, double remainingAmount, 
                                     const QString& operatorName = "系统", const QString& queryUrl = "");
+    
+    // 人脸信息管理相关方法
+    bool addFaceInfo(const FaceInfo& faceInfo);
+    bool updateFaceInfo(const FaceInfo& faceInfo);
+    bool deleteFaceInfo(int faceId);
+    FaceInfo getFaceInfoById(int faceId);
+    FaceInfo getFaceInfoByUserId(int userId);
+    QList<FaceInfo> getAllFaceInfos();
+    QList<FaceInfo> getPendingFaceInfos();
+    bool auditFaceInfo(int faceId, int status, const QString& auditorName, const QString& rejectReason = "");
+    
+    // 维修申请管理相关方法
+    bool addRepairRequest(const RepairRequest& request);
+    bool updateRepairRequest(const RepairRequest& request);
+    bool deleteRepairRequest(int requestId);
+    RepairRequest getRepairRequestById(int requestId);
+    QList<RepairRequest> getAllRepairRequests();
+    QList<RepairRequest> getRepairRequestsByUser(int userId);
+    QList<RepairRequest> getRepairRequestsByDormitory(const QString& dormitory);
+    QList<RepairRequest> getPendingRepairRequests();
+    bool handleRepairRequest(int requestId, int status, const QString& handlerName, const QString& handleResult = "");
+    
+    // 换寝申请管理相关方法
+    bool addRoomChangeRequest(const RoomChangeRequest& request);
+    bool updateRoomChangeRequest(const RoomChangeRequest& request);
+    bool deleteRoomChangeRequest(int requestId);
+    RoomChangeRequest getRoomChangeRequestById(int requestId);
+    QList<RoomChangeRequest> getAllRoomChangeRequests();
+    QList<RoomChangeRequest> getRoomChangeRequestsByUser(int userId);
+    QList<RoomChangeRequest> getPendingRoomChangeRequests();
+    bool auditRoomChangeRequest(int requestId, int status, const QString& auditorName, const QString& rejectReason = "");
+    bool completeRoomChange(int requestId);
+    
+    // 电器控制管理相关方法
+    bool addApplianceControl(const ApplianceControl& appliance);
+    bool updateApplianceControl(const ApplianceControl& appliance);
+    bool deleteApplianceControl(int applianceId);
+    ApplianceControl getApplianceControlById(int applianceId);
+    QList<ApplianceControl> getApplianceControlsByDormitory(const QString& dormitory);
+    QList<ApplianceControl> getAllApplianceControls();
+    bool updateApplianceStatus(int applianceId, int status, int powerLevel = -1);
+    bool setApplianceSchedule(int applianceId, const QString& schedule);
     
     /**
      * @brief 用户充值操作

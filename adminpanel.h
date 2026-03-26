@@ -119,69 +119,49 @@ private slots:
      */
     void onImportFromExcelClicked();
     
+    void onAuditFaceInfoClicked();
+    void onHandleRepairClicked();
+    void onAuditRoomChangeClicked();
+    void onManageApplianceClicked();
+    
 private:
-    /**
-     * @brief 初始化用户界面
-     */
     void initUI();
-    
-    /**
-     * @brief 加载用户信息
-     */
     void loadUserInfo();
-    
-    /**
-     * @brief 加载学生列表
-     */
     void loadStudents();
-    
-    /**
-     * @brief 加载宿舍列表
-     */
     void loadDormitories();
-    
-    /**
-     * @brief 加载充值记录
-     */
     void loadRechargeRecords();
-    
-    /**
-     * @brief 加载用电记录
-     */
     void loadElectricityRecords();
-    
-    /**
-     * @brief 加载统计信息
-     */
     void loadStatistics();
-    
-    /**
-     * @brief 更新充值趋势图表
-     */
     void updateRechargeChart();
-    
-    /**
-     * @brief 更新用电趋势图表
-     */
     void updateElectricityChart();
-    
-    /**
-     * @brief 加载度数变化记录
-     */
     void loadKwhChangeRecords();
     
-    QLabel *m_userInfoLabel;                // 用户信息标签
-    QTableWidget *m_studentsTable;          // 学生列表表格
-    QTableWidget *m_dormitoriesTable;       // 宿舍列表表格
-    QTableWidget *m_rechargeRecordsTable;   // 充值记录表格
-    QTableWidget *m_electricityRecordsTable; // 用电记录表格
-    QTableWidget *m_kwhChangeRecordsTable;  // 度数变化记录表格
-    QChartView *m_rechargeChartView;        // 充值趋势图表视图
-    QChartView *m_electricityChartView;     // 用电趋势图表视图
-    QLabel *m_totalStudentsLabel;           // 总学生数标签
-    QLabel *m_totalBalanceLabel;            // 总余额标签
-    QLabel *m_totalRechargeLabel;           // 总充值金额标签
-    UserInfo m_currentUser;                 // 当前用户信息
+    QWidget* initFaceAuditTab();
+    QWidget* initRepairHandleTab();
+    QWidget* initRoomChangeAuditTab();
+    QWidget* initApplianceManageTab();
+    void loadPendingFaceInfos();
+    void loadPendingRepairRequests();
+    void loadPendingRoomChangeRequests();
+    void loadAllAppliances();
+    
+    QLabel *m_userInfoLabel;
+    QTableWidget *m_studentsTable;
+    QTableWidget *m_dormitoriesTable;
+    QTableWidget *m_rechargeRecordsTable;
+    QTableWidget *m_electricityRecordsTable;
+    QTableWidget *m_kwhChangeRecordsTable;
+    QChartView *m_rechargeChartView;
+    QChartView *m_electricityChartView;
+    QLabel *m_totalStudentsLabel;
+    QLabel *m_totalBalanceLabel;
+    QLabel *m_totalRechargeLabel;
+    UserInfo m_currentUser;
+    
+    QTableWidget *m_faceAuditTable;
+    QTableWidget *m_repairHandleTable;
+    QTableWidget *m_roomChangeAuditTable;
+    QTableWidget *m_applianceManageTable;
 };
 
 #endif // ADMINPANEL_H

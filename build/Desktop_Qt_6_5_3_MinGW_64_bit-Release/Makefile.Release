@@ -3057,7 +3057,18 @@ release/studentpanel.o: ../../studentpanel.cpp ../../studentpanel.h \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCharts/QDateTimeAxis \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCharts/qdatetimeaxis.h \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCharts/QValueAxis \
-		../../../../../../QT_file/6.5.3/mingw_64/include/QtCharts/qvalueaxis.h
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCharts/qvalueaxis.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/QFileDialog \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/qfiledialog.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qdir.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qfile.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qfiledevice.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qfileinfo.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/QComboBox \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/qcombobox.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/QDialogButtonBox \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/qdialogbuttonbox.h \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtGui/QPixmap
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\studentpanel.o ..\..\studentpanel.cpp
 
 release/adminpanel.o: ../../adminpanel.cpp ../../adminpanel.h \
@@ -3334,7 +3345,9 @@ release/adminpanel.o: ../../adminpanel.cpp ../../adminpanel.h \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qfiledevice.h \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/qfileinfo.h \
 		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QFile \
-		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QTextStream
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtCore/QTextStream \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/QSpinBox \
+		../../../../../../QT_file/6.5.3/mingw_64/include/QtWidgets/qspinbox.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\adminpanel.o ..\..\adminpanel.cpp
 
 release/electricityquery.o: ../../electricityquery.cpp ../../electricityquery.h \

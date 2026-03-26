@@ -40,7 +40,7 @@ void loding_wd::initUI()
     mainLayout->setSpacing(20);
     mainLayout->setContentsMargins(50, 50, 50, 50);
     
-    QLabel *titleLabel = new QLabel("惠电宿舍电费充值管理系统");
+    QLabel *titleLabel = new QLabel("惠电宿舍智能管理系统");
     titleLabel->setStyleSheet("font-size: 22px; font-weight: bold; color: #2c3e50;");
     titleLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(titleLabel);

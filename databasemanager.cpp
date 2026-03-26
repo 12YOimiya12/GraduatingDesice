@@ -210,6 +210,106 @@ bool DatabaseManager::createTables()
         return false;
     }
     
+    QString createFaceInfoTable = R"(
+        CREATE TABLE IF NOT EXISTS face_info (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            dormitory TEXT NOT NULL,
+            face_image_path TEXT,
+            face_feature_data TEXT,
+            status INTEGER NOT NULL DEFAULT 0,
+            reject_reason TEXT,
+            submit_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            audit_time DATETIME,
+            auditor_name TEXT,
+            remark TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    )";
+    
+    if (!query.exec(createFaceInfoTable)) {
+        qDebug() << "Create face_info table error:" << query.lastError().text();
+        return false;
+    }
+    
+    QString createRepairRequestsTable = R"(
+        CREATE TABLE IF NOT EXISTS repair_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            dormitory TEXT NOT NULL,
+            contact_phone TEXT,
+            repair_type INTEGER NOT NULL DEFAULT 0,
+            description TEXT,
+            image_path TEXT,
+            status INTEGER NOT NULL DEFAULT 0,
+            priority INTEGER NOT NULL DEFAULT 0,
+            handler_name TEXT,
+            handle_result TEXT,
+            submit_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            handle_time DATETIME,
+            complete_time DATETIME,
+            remark TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    )";
+    
+    if (!query.exec(createRepairRequestsTable)) {
+        qDebug() << "Create repair_requests table error:" << query.lastError().text();
+        return false;
+    }
+    
+    QString createRoomChangeRequestsTable = R"(
+        CREATE TABLE IF NOT EXISTS room_change_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            current_dormitory TEXT NOT NULL,
+            target_dormitory TEXT,
+            change_reason INTEGER NOT NULL DEFAULT 0,
+            description TEXT,
+            status INTEGER NOT NULL DEFAULT 0,
+            reject_reason TEXT,
+            auditor_name TEXT,
+            submit_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            audit_time DATETIME,
+            complete_time DATETIME,
+            remark TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    )";
+    
+    if (!query.exec(createRoomChangeRequestsTable)) {
+        qDebug() << "Create room_change_requests table error:" << query.lastError().text();
+        return false;
+    }
+    
+    QString createApplianceControlsTable = R"(
+        CREATE TABLE IF NOT EXISTS appliance_controls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dormitory TEXT NOT NULL,
+            appliance_name TEXT NOT NULL,
+            appliance_type TEXT NOT NULL,
+            status INTEGER NOT NULL DEFAULT 0,
+            power_level INTEGER NOT NULL DEFAULT 0,
+            current_power REAL NOT NULL DEFAULT 0.0,
+            daily_usage REAL NOT NULL DEFAULT 0.0,
+            schedule TEXT,
+            is_online INTEGER NOT NULL DEFAULT 0,
+            last_update DATETIME DEFAULT CURRENT_TIMESTAMP,
+            remark TEXT
+        )
+    )";
+    
+    if (!query.exec(createApplianceControlsTable)) {
+        qDebug() << "Create appliance_controls table error:" << query.lastError().text();
+        return false;
+    }
+    
     return true;
 }
 
@@ -232,7 +332,16 @@ bool DatabaseManager::createIndexes()
         "CREATE INDEX IF NOT EXISTS idx_electricity_kwh_change_time ON electricity_kwh_change_records(change_time)",
         "CREATE INDEX IF NOT EXISTS idx_electricity_query_dorm ON electricity_query_records(dormitory)",
         "CREATE INDEX IF NOT EXISTS idx_electricity_query_student ON electricity_query_records(student_account)",
-        "CREATE INDEX IF NOT EXISTS idx_electricity_query_time ON electricity_query_records(query_time)"
+        "CREATE INDEX IF NOT EXISTS idx_electricity_query_time ON electricity_query_records(query_time)",
+        "CREATE INDEX IF NOT EXISTS idx_face_info_user ON face_info(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_face_info_status ON face_info(status)",
+        "CREATE INDEX IF NOT EXISTS idx_repair_user ON repair_requests(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_repair_dorm ON repair_requests(dormitory)",
+        "CREATE INDEX IF NOT EXISTS idx_repair_status ON repair_requests(status)",
+        "CREATE INDEX IF NOT EXISTS idx_room_change_user ON room_change_requests(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_room_change_status ON room_change_requests(status)",
+        "CREATE INDEX IF NOT EXISTS idx_appliance_dorm ON appliance_controls(dormitory)",
+        "CREATE INDEX IF NOT EXISTS idx_appliance_status ON appliance_controls(status)"
     };
     
     for (const QString& sql : indexQueries) {
@@ -1453,6 +1562,896 @@ QList<ElectricityChangeRecord> DatabaseManager::getElectricityChangeRecordsByUse
     }
     
     return records;
+}
+
+// ==================== 人脸信息管理 ====================
+
+bool DatabaseManager::addFaceInfo(const FaceInfo& faceInfo)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        INSERT INTO face_info (user_id, student_id, name, dormitory, face_image_path, face_feature_data, status, remark)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    )");
+    
+    query.addBindValue(faceInfo.userId);
+    query.addBindValue(faceInfo.studentId);
+    query.addBindValue(faceInfo.name);
+    query.addBindValue(faceInfo.dormitory);
+    query.addBindValue(faceInfo.faceImagePath);
+    query.addBindValue(faceInfo.faceFeatureData);
+    query.addBindValue(faceInfo.status);
+    query.addBindValue(faceInfo.remark);
+    
+    if (!query.exec()) {
+        qDebug() << "Add face info error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::updateFaceInfo(const FaceInfo& faceInfo)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        UPDATE face_info SET student_id=?, name=?, dormitory=?, face_image_path=?, 
+        face_feature_data=?, status=?, reject_reason=?, auditor_name=?, remark=? 
+        WHERE id=?
+    )");
+    
+    query.addBindValue(faceInfo.studentId);
+    query.addBindValue(faceInfo.name);
+    query.addBindValue(faceInfo.dormitory);
+    query.addBindValue(faceInfo.faceImagePath);
+    query.addBindValue(faceInfo.faceFeatureData);
+    query.addBindValue(faceInfo.status);
+    query.addBindValue(faceInfo.rejectReason);
+    query.addBindValue(faceInfo.auditorName);
+    query.addBindValue(faceInfo.remark);
+    query.addBindValue(faceInfo.id);
+    
+    if (!query.exec()) {
+        qDebug() << "Update face info error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::deleteFaceInfo(int faceId)
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM face_info WHERE id=?");
+    query.addBindValue(faceId);
+    
+    if (!query.exec()) {
+        qDebug() << "Delete face info error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+FaceInfo DatabaseManager::getFaceInfoById(int faceId)
+{
+    FaceInfo faceInfo;
+    faceInfo.id = -1;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM face_info WHERE id=?");
+    query.addBindValue(faceId);
+    
+    if (query.exec() && query.next()) {
+        faceInfo.id = query.value("id").toInt();
+        faceInfo.userId = query.value("user_id").toInt();
+        faceInfo.studentId = query.value("student_id").toString();
+        faceInfo.name = query.value("name").toString();
+        faceInfo.dormitory = query.value("dormitory").toString();
+        faceInfo.faceImagePath = query.value("face_image_path").toString();
+        faceInfo.faceFeatureData = query.value("face_feature_data").toString();
+        faceInfo.status = query.value("status").toInt();
+        faceInfo.rejectReason = query.value("reject_reason").toString();
+        faceInfo.submitTime = query.value("submit_time").toDateTime();
+        faceInfo.auditTime = query.value("audit_time").toDateTime();
+        faceInfo.auditorName = query.value("auditor_name").toString();
+        faceInfo.remark = query.value("remark").toString();
+    }
+    
+    return faceInfo;
+}
+
+FaceInfo DatabaseManager::getFaceInfoByUserId(int userId)
+{
+    FaceInfo faceInfo;
+    faceInfo.id = -1;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM face_info WHERE user_id=? ORDER BY submit_time DESC LIMIT 1");
+    query.addBindValue(userId);
+    
+    if (query.exec() && query.next()) {
+        faceInfo.id = query.value("id").toInt();
+        faceInfo.userId = query.value("user_id").toInt();
+        faceInfo.studentId = query.value("student_id").toString();
+        faceInfo.name = query.value("name").toString();
+        faceInfo.dormitory = query.value("dormitory").toString();
+        faceInfo.faceImagePath = query.value("face_image_path").toString();
+        faceInfo.faceFeatureData = query.value("face_feature_data").toString();
+        faceInfo.status = query.value("status").toInt();
+        faceInfo.rejectReason = query.value("reject_reason").toString();
+        faceInfo.submitTime = query.value("submit_time").toDateTime();
+        faceInfo.auditTime = query.value("audit_time").toDateTime();
+        faceInfo.auditorName = query.value("auditor_name").toString();
+        faceInfo.remark = query.value("remark").toString();
+    }
+    
+    return faceInfo;
+}
+
+QList<FaceInfo> DatabaseManager::getAllFaceInfos()
+{
+    QList<FaceInfo> list;
+    
+    QSqlQuery query("SELECT * FROM face_info ORDER BY submit_time DESC");
+    
+    while (query.next()) {
+        FaceInfo faceInfo;
+        faceInfo.id = query.value("id").toInt();
+        faceInfo.userId = query.value("user_id").toInt();
+        faceInfo.studentId = query.value("student_id").toString();
+        faceInfo.name = query.value("name").toString();
+        faceInfo.dormitory = query.value("dormitory").toString();
+        faceInfo.faceImagePath = query.value("face_image_path").toString();
+        faceInfo.faceFeatureData = query.value("face_feature_data").toString();
+        faceInfo.status = query.value("status").toInt();
+        faceInfo.rejectReason = query.value("reject_reason").toString();
+        faceInfo.submitTime = query.value("submit_time").toDateTime();
+        faceInfo.auditTime = query.value("audit_time").toDateTime();
+        faceInfo.auditorName = query.value("auditor_name").toString();
+        faceInfo.remark = query.value("remark").toString();
+        list.append(faceInfo);
+    }
+    
+    return list;
+}
+
+QList<FaceInfo> DatabaseManager::getPendingFaceInfos()
+{
+    QList<FaceInfo> list;
+    
+    QSqlQuery query("SELECT * FROM face_info WHERE status=0 ORDER BY submit_time DESC");
+    
+    while (query.next()) {
+        FaceInfo faceInfo;
+        faceInfo.id = query.value("id").toInt();
+        faceInfo.userId = query.value("user_id").toInt();
+        faceInfo.studentId = query.value("student_id").toString();
+        faceInfo.name = query.value("name").toString();
+        faceInfo.dormitory = query.value("dormitory").toString();
+        faceInfo.faceImagePath = query.value("face_image_path").toString();
+        faceInfo.faceFeatureData = query.value("face_feature_data").toString();
+        faceInfo.status = query.value("status").toInt();
+        faceInfo.rejectReason = query.value("reject_reason").toString();
+        faceInfo.submitTime = query.value("submit_time").toDateTime();
+        faceInfo.auditTime = query.value("audit_time").toDateTime();
+        faceInfo.auditorName = query.value("auditor_name").toString();
+        faceInfo.remark = query.value("remark").toString();
+        list.append(faceInfo);
+    }
+    
+    return list;
+}
+
+bool DatabaseManager::auditFaceInfo(int faceId, int status, const QString& auditorName, const QString& rejectReason)
+{
+    QSqlQuery query;
+    query.prepare("UPDATE face_info SET status=?, auditor_name=?, audit_time=CURRENT_TIMESTAMP, reject_reason=? WHERE id=?");
+    query.addBindValue(status);
+    query.addBindValue(auditorName);
+    query.addBindValue(rejectReason);
+    query.addBindValue(faceId);
+    
+    if (!query.exec()) {
+        qDebug() << "Audit face info error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+// ==================== 维修申请管理 ====================
+
+bool DatabaseManager::addRepairRequest(const RepairRequest& request)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        INSERT INTO repair_requests (user_id, student_id, name, dormitory, contact_phone, 
+        repair_type, description, image_path, status, priority, remark)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )");
+    
+    query.addBindValue(request.userId);
+    query.addBindValue(request.studentId);
+    query.addBindValue(request.name);
+    query.addBindValue(request.dormitory);
+    query.addBindValue(request.contactPhone);
+    query.addBindValue(request.repairType);
+    query.addBindValue(request.description);
+    query.addBindValue(request.imagePath);
+    query.addBindValue(request.status);
+    query.addBindValue(request.priority);
+    query.addBindValue(request.remark);
+    
+    if (!query.exec()) {
+        qDebug() << "Add repair request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::updateRepairRequest(const RepairRequest& request)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        UPDATE repair_requests SET contact_phone=?, repair_type=?, description=?, 
+        image_path=?, status=?, priority=?, handler_name=?, handle_result=?, remark=? 
+        WHERE id=?
+    )");
+    
+    query.addBindValue(request.contactPhone);
+    query.addBindValue(request.repairType);
+    query.addBindValue(request.description);
+    query.addBindValue(request.imagePath);
+    query.addBindValue(request.status);
+    query.addBindValue(request.priority);
+    query.addBindValue(request.handlerName);
+    query.addBindValue(request.handleResult);
+    query.addBindValue(request.remark);
+    query.addBindValue(request.id);
+    
+    if (!query.exec()) {
+        qDebug() << "Update repair request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::deleteRepairRequest(int requestId)
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM repair_requests WHERE id=?");
+    query.addBindValue(requestId);
+    
+    if (!query.exec()) {
+        qDebug() << "Delete repair request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+RepairRequest DatabaseManager::getRepairRequestById(int requestId)
+{
+    RepairRequest request;
+    request.id = -1;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM repair_requests WHERE id=?");
+    query.addBindValue(requestId);
+    
+    if (query.exec() && query.next()) {
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.dormitory = query.value("dormitory").toString();
+        request.contactPhone = query.value("contact_phone").toString();
+        request.repairType = query.value("repair_type").toInt();
+        request.description = query.value("description").toString();
+        request.imagePath = query.value("image_path").toString();
+        request.status = query.value("status").toInt();
+        request.priority = query.value("priority").toInt();
+        request.handlerName = query.value("handler_name").toString();
+        request.handleResult = query.value("handle_result").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.handleTime = query.value("handle_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+    }
+    
+    return request;
+}
+
+QList<RepairRequest> DatabaseManager::getAllRepairRequests()
+{
+    QList<RepairRequest> list;
+    
+    QSqlQuery query("SELECT * FROM repair_requests ORDER BY submit_time DESC");
+    
+    while (query.next()) {
+        RepairRequest request;
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.dormitory = query.value("dormitory").toString();
+        request.contactPhone = query.value("contact_phone").toString();
+        request.repairType = query.value("repair_type").toInt();
+        request.description = query.value("description").toString();
+        request.imagePath = query.value("image_path").toString();
+        request.status = query.value("status").toInt();
+        request.priority = query.value("priority").toInt();
+        request.handlerName = query.value("handler_name").toString();
+        request.handleResult = query.value("handle_result").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.handleTime = query.value("handle_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+        list.append(request);
+    }
+    
+    return list;
+}
+
+QList<RepairRequest> DatabaseManager::getRepairRequestsByUser(int userId)
+{
+    QList<RepairRequest> list;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM repair_requests WHERE user_id=? ORDER BY submit_time DESC");
+    query.addBindValue(userId);
+    
+    while (query.next()) {
+        RepairRequest request;
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.dormitory = query.value("dormitory").toString();
+        request.contactPhone = query.value("contact_phone").toString();
+        request.repairType = query.value("repair_type").toInt();
+        request.description = query.value("description").toString();
+        request.imagePath = query.value("image_path").toString();
+        request.status = query.value("status").toInt();
+        request.priority = query.value("priority").toInt();
+        request.handlerName = query.value("handler_name").toString();
+        request.handleResult = query.value("handle_result").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.handleTime = query.value("handle_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+        list.append(request);
+    }
+    
+    return list;
+}
+
+QList<RepairRequest> DatabaseManager::getRepairRequestsByDormitory(const QString& dormitory)
+{
+    QList<RepairRequest> list;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM repair_requests WHERE dormitory=? ORDER BY submit_time DESC");
+    query.addBindValue(dormitory);
+    
+    while (query.next()) {
+        RepairRequest request;
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.dormitory = query.value("dormitory").toString();
+        request.contactPhone = query.value("contact_phone").toString();
+        request.repairType = query.value("repair_type").toInt();
+        request.description = query.value("description").toString();
+        request.imagePath = query.value("image_path").toString();
+        request.status = query.value("status").toInt();
+        request.priority = query.value("priority").toInt();
+        request.handlerName = query.value("handler_name").toString();
+        request.handleResult = query.value("handle_result").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.handleTime = query.value("handle_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+        list.append(request);
+    }
+    
+    return list;
+}
+
+QList<RepairRequest> DatabaseManager::getPendingRepairRequests()
+{
+    QList<RepairRequest> list;
+    
+    QSqlQuery query("SELECT * FROM repair_requests WHERE status=0 OR status=1 ORDER BY priority DESC, submit_time ASC");
+    
+    while (query.next()) {
+        RepairRequest request;
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.dormitory = query.value("dormitory").toString();
+        request.contactPhone = query.value("contact_phone").toString();
+        request.repairType = query.value("repair_type").toInt();
+        request.description = query.value("description").toString();
+        request.imagePath = query.value("image_path").toString();
+        request.status = query.value("status").toInt();
+        request.priority = query.value("priority").toInt();
+        request.handlerName = query.value("handler_name").toString();
+        request.handleResult = query.value("handle_result").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.handleTime = query.value("handle_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+        list.append(request);
+    }
+    
+    return list;
+}
+
+bool DatabaseManager::handleRepairRequest(int requestId, int status, const QString& handlerName, const QString& handleResult)
+{
+    QSqlQuery query;
+    
+    if (status == 1) {
+        query.prepare("UPDATE repair_requests SET status=?, handler_name=?, handle_time=CURRENT_TIMESTAMP WHERE id=?");
+        query.addBindValue(status);
+        query.addBindValue(handlerName);
+        query.addBindValue(requestId);
+    } else if (status == 2) {
+        query.prepare("UPDATE repair_requests SET status=?, handler_name=?, handle_result=?, complete_time=CURRENT_TIMESTAMP WHERE id=?");
+        query.addBindValue(status);
+        query.addBindValue(handlerName);
+        query.addBindValue(handleResult);
+        query.addBindValue(requestId);
+    } else {
+        query.prepare("UPDATE repair_requests SET status=?, handler_name=?, handle_result=? WHERE id=?");
+        query.addBindValue(status);
+        query.addBindValue(handlerName);
+        query.addBindValue(handleResult);
+        query.addBindValue(requestId);
+    }
+    
+    if (!query.exec()) {
+        qDebug() << "Handle repair request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+// ==================== 换寝申请管理 ====================
+
+bool DatabaseManager::addRoomChangeRequest(const RoomChangeRequest& request)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        INSERT INTO room_change_requests (user_id, student_id, name, current_dormitory, 
+        target_dormitory, change_reason, description, status, remark)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )");
+    
+    query.addBindValue(request.userId);
+    query.addBindValue(request.studentId);
+    query.addBindValue(request.name);
+    query.addBindValue(request.currentDormitory);
+    query.addBindValue(request.targetDormitory);
+    query.addBindValue(request.changeReason);
+    query.addBindValue(request.description);
+    query.addBindValue(request.status);
+    query.addBindValue(request.remark);
+    
+    if (!query.exec()) {
+        qDebug() << "Add room change request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::updateRoomChangeRequest(const RoomChangeRequest& request)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        UPDATE room_change_requests SET target_dormitory=?, change_reason=?, description=?, 
+        status=?, reject_reason=?, auditor_name=?, remark=? WHERE id=?
+    )");
+    
+    query.addBindValue(request.targetDormitory);
+    query.addBindValue(request.changeReason);
+    query.addBindValue(request.description);
+    query.addBindValue(request.status);
+    query.addBindValue(request.rejectReason);
+    query.addBindValue(request.auditorName);
+    query.addBindValue(request.remark);
+    query.addBindValue(request.id);
+    
+    if (!query.exec()) {
+        qDebug() << "Update room change request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::deleteRoomChangeRequest(int requestId)
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM room_change_requests WHERE id=?");
+    query.addBindValue(requestId);
+    
+    if (!query.exec()) {
+        qDebug() << "Delete room change request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+RoomChangeRequest DatabaseManager::getRoomChangeRequestById(int requestId)
+{
+    RoomChangeRequest request;
+    request.id = -1;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM room_change_requests WHERE id=?");
+    query.addBindValue(requestId);
+    
+    if (query.exec() && query.next()) {
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.currentDormitory = query.value("current_dormitory").toString();
+        request.targetDormitory = query.value("target_dormitory").toString();
+        request.changeReason = query.value("change_reason").toInt();
+        request.description = query.value("description").toString();
+        request.status = query.value("status").toInt();
+        request.rejectReason = query.value("reject_reason").toString();
+        request.auditorName = query.value("auditor_name").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.auditTime = query.value("audit_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+    }
+    
+    return request;
+}
+
+QList<RoomChangeRequest> DatabaseManager::getAllRoomChangeRequests()
+{
+    QList<RoomChangeRequest> list;
+    
+    QSqlQuery query("SELECT * FROM room_change_requests ORDER BY submit_time DESC");
+    
+    while (query.next()) {
+        RoomChangeRequest request;
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.currentDormitory = query.value("current_dormitory").toString();
+        request.targetDormitory = query.value("target_dormitory").toString();
+        request.changeReason = query.value("change_reason").toInt();
+        request.description = query.value("description").toString();
+        request.status = query.value("status").toInt();
+        request.rejectReason = query.value("reject_reason").toString();
+        request.auditorName = query.value("auditor_name").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.auditTime = query.value("audit_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+        list.append(request);
+    }
+    
+    return list;
+}
+
+QList<RoomChangeRequest> DatabaseManager::getRoomChangeRequestsByUser(int userId)
+{
+    QList<RoomChangeRequest> list;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM room_change_requests WHERE user_id=? ORDER BY submit_time DESC");
+    query.addBindValue(userId);
+    
+    while (query.next()) {
+        RoomChangeRequest request;
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.currentDormitory = query.value("current_dormitory").toString();
+        request.targetDormitory = query.value("target_dormitory").toString();
+        request.changeReason = query.value("change_reason").toInt();
+        request.description = query.value("description").toString();
+        request.status = query.value("status").toInt();
+        request.rejectReason = query.value("reject_reason").toString();
+        request.auditorName = query.value("auditor_name").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.auditTime = query.value("audit_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+        list.append(request);
+    }
+    
+    return list;
+}
+
+QList<RoomChangeRequest> DatabaseManager::getPendingRoomChangeRequests()
+{
+    QList<RoomChangeRequest> list;
+    
+    QSqlQuery query("SELECT * FROM room_change_requests WHERE status=0 ORDER BY submit_time ASC");
+    
+    while (query.next()) {
+        RoomChangeRequest request;
+        request.id = query.value("id").toInt();
+        request.userId = query.value("user_id").toInt();
+        request.studentId = query.value("student_id").toString();
+        request.name = query.value("name").toString();
+        request.currentDormitory = query.value("current_dormitory").toString();
+        request.targetDormitory = query.value("target_dormitory").toString();
+        request.changeReason = query.value("change_reason").toInt();
+        request.description = query.value("description").toString();
+        request.status = query.value("status").toInt();
+        request.rejectReason = query.value("reject_reason").toString();
+        request.auditorName = query.value("auditor_name").toString();
+        request.submitTime = query.value("submit_time").toDateTime();
+        request.auditTime = query.value("audit_time").toDateTime();
+        request.completeTime = query.value("complete_time").toDateTime();
+        request.remark = query.value("remark").toString();
+        list.append(request);
+    }
+    
+    return list;
+}
+
+bool DatabaseManager::auditRoomChangeRequest(int requestId, int status, const QString& auditorName, const QString& rejectReason)
+{
+    QSqlQuery query;
+    query.prepare("UPDATE room_change_requests SET status=?, auditor_name=?, audit_time=CURRENT_TIMESTAMP, reject_reason=? WHERE id=?");
+    query.addBindValue(status);
+    query.addBindValue(auditorName);
+    query.addBindValue(rejectReason);
+    query.addBindValue(requestId);
+    
+    if (!query.exec()) {
+        qDebug() << "Audit room change request error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::completeRoomChange(int requestId)
+{
+    m_db.transaction();
+    
+    RoomChangeRequest request = getRoomChangeRequestById(requestId);
+    if (request.id == -1) {
+        m_db.rollback();
+        return false;
+    }
+    
+    UserInfo user = getUserById(request.userId);
+    if (user.id == -1) {
+        m_db.rollback();
+        return false;
+    }
+    
+    user.dormitory = request.targetDormitory;
+    if (!updateUser(user)) {
+        m_db.rollback();
+        return false;
+    }
+    
+    QSqlQuery query;
+    query.prepare("UPDATE room_change_requests SET status=3, complete_time=CURRENT_TIMESTAMP WHERE id=?");
+    query.addBindValue(requestId);
+    
+    if (!query.exec()) {
+        m_db.rollback();
+        qDebug() << "Complete room change error:" << query.lastError().text();
+        return false;
+    }
+    
+    m_db.commit();
+    return true;
+}
+
+// ==================== 电器控制管理 ====================
+
+bool DatabaseManager::addApplianceControl(const ApplianceControl& appliance)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        INSERT INTO appliance_controls (dormitory, appliance_name, appliance_type, status, 
+        power_level, current_power, daily_usage, schedule, is_online, remark)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )");
+    
+    query.addBindValue(appliance.dormitory);
+    query.addBindValue(appliance.applianceName);
+    query.addBindValue(appliance.applianceType);
+    query.addBindValue(appliance.status);
+    query.addBindValue(appliance.powerLevel);
+    query.addBindValue(appliance.currentPower);
+    query.addBindValue(appliance.dailyUsage);
+    query.addBindValue(appliance.schedule);
+    query.addBindValue(appliance.isOnline ? 1 : 0);
+    query.addBindValue(appliance.remark);
+    
+    if (!query.exec()) {
+        qDebug() << "Add appliance control error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::updateApplianceControl(const ApplianceControl& appliance)
+{
+    QSqlQuery query;
+    query.prepare(R"(
+        UPDATE appliance_controls SET appliance_name=?, appliance_type=?, status=?, 
+        power_level=?, current_power=?, daily_usage=?, schedule=?, is_online=?, remark=? 
+        WHERE id=?
+    )");
+    
+    query.addBindValue(appliance.applianceName);
+    query.addBindValue(appliance.applianceType);
+    query.addBindValue(appliance.status);
+    query.addBindValue(appliance.powerLevel);
+    query.addBindValue(appliance.currentPower);
+    query.addBindValue(appliance.dailyUsage);
+    query.addBindValue(appliance.schedule);
+    query.addBindValue(appliance.isOnline ? 1 : 0);
+    query.addBindValue(appliance.remark);
+    query.addBindValue(appliance.id);
+    
+    if (!query.exec()) {
+        qDebug() << "Update appliance control error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::deleteApplianceControl(int applianceId)
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM appliance_controls WHERE id=?");
+    query.addBindValue(applianceId);
+    
+    if (!query.exec()) {
+        qDebug() << "Delete appliance control error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+ApplianceControl DatabaseManager::getApplianceControlById(int applianceId)
+{
+    ApplianceControl appliance;
+    appliance.id = -1;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM appliance_controls WHERE id=?");
+    query.addBindValue(applianceId);
+    
+    if (query.exec() && query.next()) {
+        appliance.id = query.value("id").toInt();
+        appliance.dormitory = query.value("dormitory").toString();
+        appliance.applianceName = query.value("appliance_name").toString();
+        appliance.applianceType = query.value("appliance_type").toString();
+        appliance.status = query.value("status").toInt();
+        appliance.powerLevel = query.value("power_level").toInt();
+        appliance.currentPower = query.value("current_power").toDouble();
+        appliance.dailyUsage = query.value("daily_usage").toDouble();
+        appliance.schedule = query.value("schedule").toString();
+        appliance.isOnline = query.value("is_online").toInt() == 1;
+        appliance.lastUpdate = query.value("last_update").toDateTime();
+        appliance.remark = query.value("remark").toString();
+    }
+    
+    return appliance;
+}
+
+QList<ApplianceControl> DatabaseManager::getApplianceControlsByDormitory(const QString& dormitory)
+{
+    QList<ApplianceControl> list;
+    
+    QSqlQuery query;
+    query.prepare("SELECT * FROM appliance_controls WHERE dormitory=? ORDER BY appliance_type");
+    query.addBindValue(dormitory);
+    
+    while (query.next()) {
+        ApplianceControl appliance;
+        appliance.id = query.value("id").toInt();
+        appliance.dormitory = query.value("dormitory").toString();
+        appliance.applianceName = query.value("appliance_name").toString();
+        appliance.applianceType = query.value("appliance_type").toString();
+        appliance.status = query.value("status").toInt();
+        appliance.powerLevel = query.value("power_level").toInt();
+        appliance.currentPower = query.value("current_power").toDouble();
+        appliance.dailyUsage = query.value("daily_usage").toDouble();
+        appliance.schedule = query.value("schedule").toString();
+        appliance.isOnline = query.value("is_online").toInt() == 1;
+        appliance.lastUpdate = query.value("last_update").toDateTime();
+        appliance.remark = query.value("remark").toString();
+        list.append(appliance);
+    }
+    
+    return list;
+}
+
+QList<ApplianceControl> DatabaseManager::getAllApplianceControls()
+{
+    QList<ApplianceControl> list;
+    
+    QSqlQuery query("SELECT * FROM appliance_controls ORDER BY dormitory, appliance_type");
+    
+    while (query.next()) {
+        ApplianceControl appliance;
+        appliance.id = query.value("id").toInt();
+        appliance.dormitory = query.value("dormitory").toString();
+        appliance.applianceName = query.value("appliance_name").toString();
+        appliance.applianceType = query.value("appliance_type").toString();
+        appliance.status = query.value("status").toInt();
+        appliance.powerLevel = query.value("power_level").toInt();
+        appliance.currentPower = query.value("current_power").toDouble();
+        appliance.dailyUsage = query.value("daily_usage").toDouble();
+        appliance.schedule = query.value("schedule").toString();
+        appliance.isOnline = query.value("is_online").toInt() == 1;
+        appliance.lastUpdate = query.value("last_update").toDateTime();
+        appliance.remark = query.value("remark").toString();
+        list.append(appliance);
+    }
+    
+    return list;
+}
+
+bool DatabaseManager::updateApplianceStatus(int applianceId, int status, int powerLevel)
+{
+    QSqlQuery query;
+    
+    if (powerLevel >= 0) {
+        query.prepare("UPDATE appliance_controls SET status=?, power_level=?, last_update=CURRENT_TIMESTAMP WHERE id=?");
+        query.addBindValue(status);
+        query.addBindValue(powerLevel);
+    } else {
+        query.prepare("UPDATE appliance_controls SET status=?, last_update=CURRENT_TIMESTAMP WHERE id=?");
+        query.addBindValue(status);
+    }
+    query.addBindValue(applianceId);
+    
+    if (!query.exec()) {
+        qDebug() << "Update appliance status error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseManager::setApplianceSchedule(int applianceId, const QString& schedule)
+{
+    QSqlQuery query;
+    query.prepare("UPDATE appliance_controls SET schedule=?, last_update=CURRENT_TIMESTAMP WHERE id=?");
+    query.addBindValue(schedule);
+    query.addBindValue(applianceId);
+    
+    if (!query.exec()) {
+        qDebug() << "Set appliance schedule error:" << query.lastError().text();
+        return false;
+    }
+    
+    return true;
 }
 
 QList<ElectricityChangeRecord> DatabaseManager::getElectricityChangeRecordsByDormitory(const QString& dormitory)

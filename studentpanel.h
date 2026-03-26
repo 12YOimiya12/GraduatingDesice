@@ -25,6 +25,10 @@ QT_END_NAMESPACE
  * - 用电记录查询
  * - 充值记录查询
  * - 网页电费查询
+ * - 人脸信息录入
+ * - 维修申请
+ * - 换寝申请
+ * - 电器控制
  */
 class StudentPanel : public QMainWindow
 {
@@ -81,6 +85,11 @@ private slots:
      */
     void onWebQueryClicked();
     
+    void onFaceRegisterClicked();
+    void onRepairRequestClicked();
+    void onRoomChangeClicked();
+    void onApplianceControlClicked();
+    
 private:
     /**
      * @brief 初始化用户界面
@@ -132,6 +141,15 @@ private:
      */
     void checkLowKwhWarning();
     
+    QWidget* initFaceRegisterTab();
+    QWidget* initRepairRequestTab();
+    QWidget* initRoomChangeTab();
+    QWidget* initApplianceControlTab();
+    void loadFaceInfo();
+    void loadRepairRequests();
+    void loadRoomChangeRequests();
+    void loadApplianceControls();
+    
     QLabel *m_userInfoLabel;            // 用户信息标签
     QLabel *m_balanceLabel;              // 余额标签
     QLabel *m_remainingKwhLabel;         // 剩余度数标签
@@ -144,6 +162,12 @@ private:
     QPushButton *m_webQueryBtn;          // 网页查询按钮
     ElectricityQuery *m_electricityQuery; // 电费查询窗口
     UserInfo m_currentUser;              // 当前用户信息
+    
+    QLabel *m_faceStatusLabel;
+    QLabel *m_faceImageLabel;
+    QTableWidget *m_repairRequestTable;
+    QTableWidget *m_roomChangeTable;
+    QTableWidget *m_applianceTable;
 };
 
 #endif // STUDENTPANEL_H

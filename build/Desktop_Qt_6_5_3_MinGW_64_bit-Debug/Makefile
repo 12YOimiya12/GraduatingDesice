@@ -348,6 +348,7 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/moc.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/win32/opengl.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/uic.prf \
+		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/win32/dumpcpp.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/qmake_use.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/file_copies.prf \
 		../../../../QT_file/6.5.3/mingw_64/mkspecs/features/win32/windows.prf \
@@ -358,6 +359,7 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 		../../GraduatingDesice.pro \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Charts.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGLWidgets.prl \
+		../../../../QT_file/6.5.3/mingw_64/lib/Qt6AxContainer.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Widgets.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGL.prl \
 		../../../../QT_file/6.5.3/mingw_64/lib/Qt6Gui.prl \
@@ -646,6 +648,7 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/moc.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/win32/opengl.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/uic.prf:
+../../../../QT_file/6.5.3/mingw_64/mkspecs/features/win32/dumpcpp.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/qmake_use.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/file_copies.prf:
 ../../../../QT_file/6.5.3/mingw_64/mkspecs/features/win32/windows.prf:
@@ -656,6 +659,7 @@ Makefile: ../../GraduatingDesice.pro ../../../../QT_file/6.5.3/mingw_64/mkspecs/
 ../../GraduatingDesice.pro:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Charts.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGLWidgets.prl:
+../../../../QT_file/6.5.3/mingw_64/lib/Qt6AxContainer.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Widgets.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6OpenGL.prl:
 ../../../../QT_file/6.5.3/mingw_64/lib/Qt6Gui.prl:

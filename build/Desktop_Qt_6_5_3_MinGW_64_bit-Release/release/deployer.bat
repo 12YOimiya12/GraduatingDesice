@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ============================================
-echo 惠电宿舍电费充值管理系统 - 自动封装脚本
+echo 惠电宿舍智能管理系统 - 自动封装脚本
 echo ============================================
 echo.
 
@@ -175,7 +175,7 @@ echo 8. 创建启动脚本...
 echo @echo off
 echo chcp 65001 ^> nul
 echo echo ========================================
-echo echo     惠电宿舍电费充值管理系统
+echo echo     惠电宿舍智能管理系统
 echo echo ========================================
 echo echo.
 echo 
@@ -195,7 +195,7 @@ echo timeout /t 1 /nobreak ^> nul
 echo @echo off
 echo chcp 65001 ^> nul
 echo echo ========================================
-echo echo     卸载惠电宿舍电费充值管理系统
+echo echo     卸载惠电宿舍智能管理系统
 echo echo ========================================
 echo echo.
 echo echo 警告：这将删除系统及其所有文件！
@@ -219,12 +219,12 @@ echo   ✓ 创建: 卸载.bat
 echo.
 echo 9. 创建说明文档...
 (
-echo 惠电宿舍电费充值管理系统 使用说明
+echo 惠电宿舍智能管理系统 使用说明
 echo ====================================
 echo.
 echo 版本信息
 echo --------
-echo 程序名称: 惠电宿舍电费充值管理系统
+echo 程序名称: 惠电宿舍智能管理系统
 echo Qt版本: 6.5.3
 echo 编译器: MinGW 64-bit
 echo 构建日期: %date:~0,4%-%date:~5,2%-%date:~8,2%

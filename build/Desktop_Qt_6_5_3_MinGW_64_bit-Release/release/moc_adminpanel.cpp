@@ -57,11 +57,15 @@ static constexpr auto qt_meta_stringdata_CLASSAdminPanelENDCLASS = QtMocHelpers:
     "onBatchRechargeClicked",
     "onBatchDeductClicked",
     "onExportToExcelClicked",
-    "onImportFromExcelClicked"
+    "onImportFromExcelClicked",
+    "onAuditFaceInfoClicked",
+    "onHandleRepairClicked",
+    "onAuditRoomChangeClicked",
+    "onManageApplianceClicked"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSAdminPanelENDCLASS_t {
-    uint offsetsAndSizes[38];
+    uint offsetsAndSizes[46];
     char stringdata0[11];
     char stringdata1[7];
     char stringdata2[1];
@@ -81,6 +85,10 @@ struct qt_meta_stringdata_CLASSAdminPanelENDCLASS_t {
     char stringdata16[21];
     char stringdata17[23];
     char stringdata18[25];
+    char stringdata19[23];
+    char stringdata20[22];
+    char stringdata21[25];
+    char stringdata22[25];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSAdminPanelENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -104,7 +112,11 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSAdminPanelENDCLASS_t qt_meta_st
         QT_MOC_LITERAL(260, 22),  // "onBatchRechargeClicked"
         QT_MOC_LITERAL(283, 20),  // "onBatchDeductClicked"
         QT_MOC_LITERAL(304, 22),  // "onExportToExcelClicked"
-        QT_MOC_LITERAL(327, 24)   // "onImportFromExcelClicked"
+        QT_MOC_LITERAL(327, 24),  // "onImportFromExcelClicked"
+        QT_MOC_LITERAL(352, 22),  // "onAuditFaceInfoClicked"
+        QT_MOC_LITERAL(375, 21),  // "onHandleRepairClicked"
+        QT_MOC_LITERAL(397, 24),  // "onAuditRoomChangeClicked"
+        QT_MOC_LITERAL(422, 24)   // "onManageApplianceClicked"
     },
     "AdminPanel",
     "logout",
@@ -124,7 +136,11 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSAdminPanelENDCLASS_t qt_meta_st
     "onBatchRechargeClicked",
     "onBatchDeductClicked",
     "onExportToExcelClicked",
-    "onImportFromExcelClicked"
+    "onImportFromExcelClicked",
+    "onAuditFaceInfoClicked",
+    "onHandleRepairClicked",
+    "onAuditRoomChangeClicked",
+    "onManageApplianceClicked"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -136,7 +152,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSAdminPanelENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-      16,   14, // methods
+      20,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -144,24 +160,28 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSAdminPanelENDCLASS[] = {
        1,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  110,    2, 0x06,    1 /* Public */,
+       1,    0,  134,    2, 0x06,    1 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       3,    0,  111,    2, 0x08,    2 /* Private */,
-       4,    0,  112,    2, 0x08,    3 /* Private */,
-       5,    0,  113,    2, 0x08,    4 /* Private */,
-       6,    0,  114,    2, 0x08,    5 /* Private */,
-       7,    0,  115,    2, 0x08,    6 /* Private */,
-       8,    0,  116,    2, 0x08,    7 /* Private */,
-       9,    0,  117,    2, 0x08,    8 /* Private */,
-      10,    0,  118,    2, 0x08,    9 /* Private */,
-      11,    0,  119,    2, 0x08,   10 /* Private */,
-      12,    0,  120,    2, 0x08,   11 /* Private */,
-      13,    1,  121,    2, 0x08,   12 /* Private */,
-      15,    0,  124,    2, 0x08,   14 /* Private */,
-      16,    0,  125,    2, 0x08,   15 /* Private */,
-      17,    0,  126,    2, 0x08,   16 /* Private */,
-      18,    0,  127,    2, 0x08,   17 /* Private */,
+       3,    0,  135,    2, 0x08,    2 /* Private */,
+       4,    0,  136,    2, 0x08,    3 /* Private */,
+       5,    0,  137,    2, 0x08,    4 /* Private */,
+       6,    0,  138,    2, 0x08,    5 /* Private */,
+       7,    0,  139,    2, 0x08,    6 /* Private */,
+       8,    0,  140,    2, 0x08,    7 /* Private */,
+       9,    0,  141,    2, 0x08,    8 /* Private */,
+      10,    0,  142,    2, 0x08,    9 /* Private */,
+      11,    0,  143,    2, 0x08,   10 /* Private */,
+      12,    0,  144,    2, 0x08,   11 /* Private */,
+      13,    1,  145,    2, 0x08,   12 /* Private */,
+      15,    0,  148,    2, 0x08,   14 /* Private */,
+      16,    0,  149,    2, 0x08,   15 /* Private */,
+      17,    0,  150,    2, 0x08,   16 /* Private */,
+      18,    0,  151,    2, 0x08,   17 /* Private */,
+      19,    0,  152,    2, 0x08,   18 /* Private */,
+      20,    0,  153,    2, 0x08,   19 /* Private */,
+      21,    0,  154,    2, 0x08,   20 /* Private */,
+      22,    0,  155,    2, 0x08,   21 /* Private */,
 
  // signals: parameters
     QMetaType::Void,
@@ -178,6 +198,10 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSAdminPanelENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, QMetaType::Int,   14,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -227,6 +251,14 @@ Q_CONSTINIT const QMetaObject AdminPanel::staticMetaObject = { {
         // method 'onExportToExcelClicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onImportFromExcelClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onAuditFaceInfoClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onHandleRepairClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onAuditRoomChangeClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onManageApplianceClicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
     nullptr
@@ -254,6 +286,10 @@ void AdminPanel::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 13: _t->onBatchDeductClicked(); break;
         case 14: _t->onExportToExcelClicked(); break;
         case 15: _t->onImportFromExcelClicked(); break;
+        case 16: _t->onAuditFaceInfoClicked(); break;
+        case 17: _t->onHandleRepairClicked(); break;
+        case 18: _t->onAuditRoomChangeClicked(); break;
+        case 19: _t->onManageApplianceClicked(); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -287,13 +323,13 @@ int AdminPanel::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 16)
+        if (_id < 20)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 16;
+        _id -= 20;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 16)
+        if (_id < 20)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 16;
+        _id -= 20;
     }
     return _id;
 }
